@@ -1,30 +1,5 @@
 #!/usr/bin/env node
 const fs = require('fs');
-const printf = require("printf");
-
-
-global.vmake = {
-    args: process.argv.splice(2),
-    tasks: {},
-    util: {},
-    debug: function (fmt, ...args) {
-        if (vmake.global_config("debug", false)) {
-            console.log(fmt, ...args);
-        }
-    },
-    info: function (fmt, ...args) {
-        console.log(printf("\u001b[38;5;86m" + fmt + "\u001b[0m", ...args));;
-    },
-    warn: function (fmt, ...args) {
-        console.log(printf("\u001b[1;33m" + fmt + "\u001b[0m", ...args));;
-    },
-    error: function (fmt, ...args) {
-        console.log(printf("\u001b[1;31m" + fmt + "\u001b[0m", ...args));;
-    },
-    success: function (fmt, ...args) {
-        console.log(printf("\u001b[1;32m" + fmt + "\u001b[0m", ...args));;
-    },
-};
 
 require("./src/vmake_util.js");
 require("./src/task_build.js");

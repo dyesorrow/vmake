@@ -3,6 +3,7 @@ const nodeSpawn = require('child_process').spawnSync;
 const fs = require('fs');
 const crypto = require('crypto');
 const Path = require('path');
+const printf = require("printf");
 
 function run(command) {
     let ret = nodeSpawn(command, {
@@ -145,6 +146,29 @@ function global_config(name, default_val) {
         return config[name];
     }
 }
+
+global.vmake = {
+    args: process.argv.splice(2),
+    tasks: {},
+    util: {},
+    debug: function (fmt, ...args) {
+        if (vmake.global_config("debug", false)) {
+            console.log(fmt, ...args);
+        }
+    },
+    info: function (fmt, ...args) {
+        console.log(printf("\u001b[38;5;86m" + fmt + "\u001b[0m", ...args));;
+    },
+    warn: function (fmt, ...args) {
+        console.log(printf("\u001b[1;33m" + fmt + "\u001b[0m", ...args));;
+    },
+    error: function (fmt, ...args) {
+        console.log(printf("\u001b[1;31m" + fmt + "\u001b[0m", ...args));;
+    },
+    success: function (fmt, ...args) {
+        console.log(printf("\u001b[1;32m" + fmt + "\u001b[0m", ...args));;
+    },
+};
 
 vmake.util.get_content = get_content;
 vmake.util.time_format = time_format;
