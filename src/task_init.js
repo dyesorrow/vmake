@@ -12,28 +12,27 @@ vmake.tasks.init = function () {
 vmake.target("app", "bin", (dest) => {
     dest.add_cxxflag("-g");
     dest.add_cxxflag("-std=c++17");
+    dest.add_cxxflag("-Wall");
     dest.add_cxxflag("-Wno-write-strings -Wno-unused-parameter -Wno-sign-compare -Wno-format-security");
     dest.add_cxxflag("-finput-charset=UTF-8");
-    dest.add_cxxflag("-Wall");
     dest.add_cxxflag("-Wextra");
 
     dest.add_package("${vmake.global_config("repo", "http://localhost:19901/vmake-repo")}", {
       "log": "1.0.0",
       "json": "1.0.0",
-      "regexp": "1.0.0",
     });
 
     dest.add_define("__DEBUG__");
     dest.add_include("src");
     dest.add_files("src/*.cpp");
-    dest.add_objs("res/icon/icon.o");
+    // dest.add_objs("res/icon/icon.o");
 
-    dest.add_ldflag("-static");
-    dest.add_ldflag("-ldl -lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive");
+    dest.add_ldflag("-static -pthread");
+    // dest.add_ldflag("-ldl -lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive");
 
-    dest.add_before(()=>{
-        console.log("todo something");
-    });
+    // dest.add_before(()=>{
+    //     console.log("todo something");
+    // });
 
     dest.add_after(() => {
         vmake.copy(dest.dir() + "/app", "bin/app");

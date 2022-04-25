@@ -38,14 +38,21 @@ try {
     if (vmake.args.length == 0) {
         vmake.tasks.build();
     } else {
-        if (vmake.tasks[vmake.args[0]]) {
+        if(vmake.args[0] == "build"){
+            vmake.tasks[vmake.args[0]](vmake.args[1]);
+        }
+        else if (vmake.tasks[vmake.args[0]]) {
             vmake.tasks[vmake.args[0]]();
         } else {
-            vmake.tasks.help();
+            vmake.tasks.build(vmake.args[0]);
         }
     }
 } catch (error) {
-    vmake.error("%s", error);
+    if(error instanceof RangeError){
+        vmake.error("%s", "No vmake project. Not find vmake.js!");
+    }else{
+        vmake.error("%s", error);
+    }
 }
 
 

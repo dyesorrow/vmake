@@ -95,7 +95,7 @@ async function target_complie(dest, dir, config) {
         }
     }
 
-    vmake.info("[%3d%] %s", 11, "obj dependency files change check");
+    // vmake.info("[%3d%] %s", 11, "obj dependency files change check");
 
     vmake.mkdirs(dir + "/obj");
 
@@ -148,6 +148,7 @@ async function target_complie(dest, dir, config) {
         let change = {};
         for (const tar in last) {
             if (!obj_list[tar]) {
+                // 文件删除
                 let objpath = dir + "/obj/" + get_obj_name(tar);
                 if (fs.existsSync(objpath)) {
                     fs.rmSync(dir + "/obj/" + objname);
@@ -177,7 +178,7 @@ async function target_complie(dest, dir, config) {
     }
 
 
-    vmake.info("[%3d%] %s", 12, "obj files make");
+    // vmake.info("[%3d%] %s", 12, "obj files make");
 
     let obj_i = 0;
     for (const source in obj_list) {
@@ -304,7 +305,7 @@ function find_vamkejs(dir, todo) {
     }
 }
 
-vmake.tasks.build = function () {
+vmake.tasks.build = function (target) {
     vmake.debug("build");
 
     find_vamkejs(process.cwd(), async (vmakejs) => {
@@ -314,9 +315,14 @@ vmake.tasks.build = function () {
 
         require(vmakejs);
 
+        if (Object.keys(vmake.target_configs).length == 0) {
+            vmake.tasks.help();
+            process.exit();
+        }
+
         let target_config;
-        if (vmake.args[1]) {
-            target_config = vmake.target_configs[vmake.args[1]];
+        if (target) {
+            target_config = vmake.target_configs[target];
         }
         if (!target_config) {
             target_config = vmake.target_configs[Object.keys(vmake.target_configs)[0]];
@@ -345,7 +351,7 @@ vmake.tasks.build = function () {
 
         vmake.mkdirs(target_config.dir + "/dest");
 
-        vmake.info("[%3d%] %s", 98, "dest link");
+        // vmake.info("[%3d%] %s", 98, "dest link");
 
         let links = [];
         for (const it of target_config.config.link) {
