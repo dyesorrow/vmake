@@ -13,7 +13,7 @@ try {
         vmake.tasks.build();
     } else {
         if(vmake.args[0] == "build"){
-            vmake.tasks[vmake.args[0]](vmake.args[1]);
+            vmake.tasks.build(vmake.args[1]);
         }
         else if (vmake.tasks[vmake.args[0]]) {
             vmake.tasks[vmake.args[0]]();
