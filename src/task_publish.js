@@ -25,7 +25,6 @@ function dir_md5(...dir_list) {
 vmake.tasks.publish = function () {
     vmake.debug("publish");
 
-
     let is_init = false;
     if (!fs.existsSync("./vmakepkg.json")) {
         // 创建 vmakepkg.json, 并报错
@@ -63,12 +62,11 @@ vmake.tasks.publish = function () {
     }
 
     if (is_init) {
-        vmake.info("just do init, will not publish");
+        vmake.info("just do init, not publish");
         return;
     }
 
     try {
-
         let config = JSON.parse(fs.readFileSync("./vmakepkg.json").toString());
         if (config.name == "") {
             vmake.info("vmakepkg.json is init file, not set name, will not publish");
@@ -76,8 +74,6 @@ vmake.tasks.publish = function () {
         }
 
         console.log(config);
-
-
 
         vmake.mkdirs(".publish");
         try {

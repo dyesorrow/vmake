@@ -221,6 +221,68 @@ async function vscode_cpp_properties(config) {
     fs.writeFileSync(".vscode/c_cpp_properties.json", JSON.stringify(configurations, null, 4));
 }
 
+async function target_link(target_config) {
+
+    vmake.mkdirs(target_config.dir + "/dest");
+
+    // vmake.info("[%3d%] %s", 98, "dest link");
+
+    let links = [];
+    for (const it of target_config.config.link) {
+        links.push("-l" + it);
+    }
+    target_config.config.ldflags = links.concat(target_config.config.ldflags);
+
+    if (target_config.type == "bin") {
+        // 链接
+        let command = `g++ ${target_config.dir}/obj/*.o ` + target_config.config.objs.join(" ");
+        for (const lib of target_config.config.libdirs) {
+            command += " -L " + lib;
+        }
+        command += " -o " + target_config.dir + "/dest/" + target_config.name + " " + target_config.config.ldflags.join(" ");
+        try {
+            vmake.info("[%3d%] %s", 99, command);
+            vmake.run(command);
+        } catch (error) {
+            vmake.error("%s", error);
+            process.exit();
+        }
+    }
+
+    if (target_config.type == "static") {
+        // 静态链接库
+        let command = `ar rcs ${target_config.dir + "/dest/lib" + target_config.name}.a ${target_config.dir}/obj/*.o ` + target_config.config.objs.join(" ");
+        try {
+            vmake.info("[%3d%] %s", 99, command);
+            vmake.run(command);
+        } catch (error) {
+            vmake.error("%s", error);
+            process.exit();
+        }
+    }
+
+    if (target_config.type == "shared") {
+        // 动态链接库
+        let command = `g++ --shared ${target_config.dir}/obj/*.o` + target_config.config.objs.join(" ");
+        for (const lib of target_config.config.libdirs) {
+            command += " -L " + lib;
+        }
+        if (os.platform() == "win32") {
+            command += " -o " + target_config.dir + "/dest/lib" + target_config.name + ".dll " + target_config.config.ldflags.join(" ");
+        }
+        if (os.platform() == "linux") {
+            command += " -o " + target_config.dir + "/dest/lib" + target_config.name + ".so " + target_config.config.ldflags.join(" ");
+        }
+        try {
+            vmake.info("[%3d%] %s", 99, command);
+            vmake.run(command);
+        } catch (error) {
+            vmake.error("%s", error);
+            process.exit();
+        }
+    }
+}
+
 
 vmake.target_configs = {};
 vmake.target = function (name, type, user_handle) {
@@ -315,21 +377,31 @@ vmake.tasks.build = function (target) {
 
         require(vmakejs);
 
-        if (Object.keys(vmake.target_configs).length == 0) {
-            vmake.tasks.help();
-            process.exit();
-        }
-
         let target_config;
+
+        // 如果指定目标，则构建指定目标
         if (target) {
             target_config = vmake.target_configs[target];
         }
+
+        // 找不到目标
         if (!target_config) {
-            target_config = vmake.target_configs[Object.keys(vmake.target_configs)[0]];
+            // 如果有对应的任务，则执行对应的任务
+            if (vmake.tasks[target]) {
+                vmake.tasks[target]();
+                return;
+            }
+
+            // 设置默认目标
+            if (!target && Object.keys(vmake.target_configs).length > 0) {
+                target_config = vmake.target_configs[Object.keys(vmake.target_configs)[0]];
+            } else {
+                vmake.error("Not find task or target for [%s] !", target);
+                process.exit();
+            }
         }
 
         vmake.info("Project: %s -> %s, %s", path.dirname(vmakejs), target_config.name, target_config.type);
-
 
         try {
             for (const func of target_config.config.before) {
@@ -340,75 +412,14 @@ vmake.tasks.build = function (target) {
             process.exit();
         }
 
-
         try {
             await target_complie(target_config.dest, target_config.dir, target_config.config);
+            await target_link(target_config);
+            await vscode_cpp_properties(target_config.config);
         } catch (error) {
             vmake.error("%s", error);
             process.exit();
         }
-
-
-        vmake.mkdirs(target_config.dir + "/dest");
-
-        // vmake.info("[%3d%] %s", 98, "dest link");
-
-        let links = [];
-        for (const it of target_config.config.link) {
-            links.push("-l" + it);
-        }
-        target_config.config.ldflags = links.concat(target_config.config.ldflags);
-
-        if (target_config.type == "bin") {
-            // 链接
-            let command = `g++ ${target_config.dir}/obj/*.o ` + target_config.config.objs.join(" ");
-            for (const lib of target_config.config.libdirs) {
-                command += " -L " + lib;
-            }
-            command += " -o " + target_config.dir + "/dest/" + target_config.name + " " + target_config.config.ldflags.join(" ");
-            try {
-                vmake.info("[%3d%] %s", 99, command);
-                vmake.run(command);
-            } catch (error) {
-                vmake.error("%s", error);
-                process.exit();
-            }
-        }
-
-        if (target_config.type == "static") {
-            // 静态链接库
-            let command = `ar rcs ${target_config.dir + "/dest/lib" + target_config.name}.a ${target_config.dir}/obj/*.o ` + target_config.config.objs.join(" ");
-            try {
-                vmake.info("[%3d%] %s", 99, command);
-                vmake.run(command);
-            } catch (error) {
-                vmake.error("%s", error);
-                process.exit();
-            }
-        }
-
-        if (target_config.type == "shared") {
-            // 动态链接库
-            let command = `g++ --shared ${target_config.dir}/obj/*.o` + target_config.config.objs.join(" ");
-            for (const lib of target_config.config.libdirs) {
-                command += " -L " + lib;
-            }
-            if (os.platform() == "win32") {
-                command += " -o " + target_config.dir + "/dest/lib" + target_config.name + ".dll " + target_config.config.ldflags.join(" ");
-            }
-            if (os.platform() == "linux") {
-                command += " -o " + target_config.dir + "/dest/lib" + target_config.name + ".so " + target_config.config.ldflags.join(" ");
-            }
-            try {
-                vmake.info("[%3d%] %s", 99, command);
-                vmake.run(command);
-            } catch (error) {
-                vmake.error("%s", error);
-                process.exit();
-            }
-        }
-
-        await vscode_cpp_properties(target_config.config);
 
         try {
             for (const func of target_config.config.after) {
