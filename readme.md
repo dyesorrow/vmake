@@ -38,9 +38,9 @@ vmake.target("app", "bin", (dest) => {
     // 添加编译选项
     dest.add_cxxflag("-g");
     dest.add_cxxflag("-std=c++17");
+    dest.add_cxxflag("-Wall");
     dest.add_cxxflag("-Wno-write-strings -Wno-unused-parameter -Wno-sign-compare -Wno-format-security");
     dest.add_cxxflag("-finput-charset=UTF-8");
-    dest.add_cxxflag("-Wall");
     dest.add_cxxflag("-Wextra");
 
     // 添加依赖
@@ -52,19 +52,29 @@ vmake.target("app", "bin", (dest) => {
         "regexp": "1.0.0",
     });
 
-    // 添加 cpp 文件
+    dest.add_define("__DEBUG__");
+    dest.add_include("src");
     dest.add_files("src/*.cpp");
+    dest.add_files("src/*.o");
 
     // 添加连接flag
     dest.add_ldflag("-static");
     dest.add_ldflag("-lsqlite3 -ldl");
     dest.add_ldflag("-lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive");
 
+    dest.add_before(()=>{ // 构建前执行的任务
+        console.log("todo something");
+    });
+
     dest.add_after(() => {  //构建结束的时候执行的任务
         vmake.copy(dest.dir() + "/app", "bin/app");
     });
 });
 
+// 添加任务
+vmake.tasks.exmaple = () => {
+    console.log("hello world");
+}
 ```
 
 注意点：
