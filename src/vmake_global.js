@@ -5,6 +5,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const Path = require('path');
 const printf = require("printf");
+const wget = require('wget-improved');
 
 global.vmake = {
     args: process.argv.splice(2),
@@ -181,6 +182,26 @@ vmake.time_format = function (time) {
         }
     }
     return result;
+}
+
+vmake.wget = function (src, dist, option) {
+    return new Promise((resolve, reject) => {
+        let download = wget.download(src, dist, option);
+        download.on('error', function (err) {
+            console.log(err);
+            reject();
+        });
+        download.on('start', function (fileSize) {
+            console.log(fileSize);
+        });
+        download.on('end', function (output) {
+            console.log(output);
+            resolve();
+        });
+        download.on('progress', function (progress) {
+            console.log(progress);
+        });
+    });
 }
 
 vmake.debug = function (fmt, ...args) {

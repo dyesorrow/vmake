@@ -1,14 +1,9 @@
-vmake.tasks.libgo = async () => {
+vmake.tasks.nlohmann = async () => {
     const fs = require("fs");
-    const os = require("os");
     const inquirer = require('inquirer');
+    const adm_zip = require("adm-zip");
 
-    if (os.platform() != "linux") {
-        vmake.error("only for linux, current platform: %s", os.platform());
-        return;
-    }
-
-    const target = "libgo";
+    const target = "nlohmann";
 
     if (fs.existsSync(target)) {
         vmake.warn("Target [%s] dir exist!", target);
@@ -23,7 +18,7 @@ vmake.tasks.libgo = async () => {
     process.chdir(target);
 
     vmake.info("[do download]");
-    await vmake.wget("https://github.com/yyzybb537/libgo/archive/refs/tags/v2.6.tar.gz", "./v2.6.tar.gz", {
+    await vmake.wget("https://github.com/nlohmann/json/releases/download/v3.10.5/include.zip", "./include.zip", {
         proxy:{
             protocol: "http",
             host: "127.0.0.1",
@@ -31,25 +26,18 @@ vmake.tasks.libgo = async () => {
         }
     });
 
-    vmake.info("[tar -xv v2.6.tar.gz]");
-    vmake.rm("libgo-2.6");
-    vmake.run("tar -xf v2.6.tar.gz");
-
-    vmake.info("[do cmake]");
-    vmake.run("mkdir build", "libgo-2.6");
-    vmake.run("cmake ..", "libgo-2.6/build");
-
-    vmake.info("[do make]");
-    vmake.run("make", "libgo-2.6/build");
+    const unzip = new adm_zip("include.zip");
+    vmake.mkdirs("nlohmann");
+    unzip.extractAllTo("nlohmann");
 
     vmake.info("[do publish]");
     vmake.mkdirs("publish");
     vmake.run("vmake publish", "publish");
-    vmake.run("cp libgo-2.6/build/liblibgo.a publish/lib");
-    vmake.run("cp libgo-2.6/libgo publish/include -r");
+    vmake.run("cp nlohmann/include/** publish/include -r");
+
     fs.writeFileSync("publish/vmakepkg.json", JSON.stringify({
-        "name": "libgo",
-        "version": "2.6.0",
+        "name": "nlohmann",
+        "version": "3.10.5",
         "repo": vmake.get_config("repo", "http://localhost:19901/vmake-repo")
     }, null, 4));
     vmake.run("vmake publish", "publish");
