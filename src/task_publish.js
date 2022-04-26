@@ -31,7 +31,7 @@ vmake.tasks.publish = function () {
         fs.writeFileSync("vmakepkg.json", JSON.stringify({
             name: "",
             version: "1.0.0",
-            repo: vmake.global_config("repo", "http://localhost:19901/vmake-repo")
+            repo: vmake.get_config("repo", "http://localhost:19901/vmake-repo")
         }, null, 4));
         is_init = true;
         vmake.info("init vmakepkg.json");

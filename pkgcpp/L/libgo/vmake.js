@@ -24,7 +24,7 @@ vmake.tasks.libgo = () => {
 
     vmake.info("[do cmake]");
     vmake.run("mkdir build", "libgo-2.6");
-    vmake.run("cmake ..", "libgo-2.6/build")
+    vmake.run("cmake ..", "libgo-2.6/build");
 
     vmake.info("[do make]");
     vmake.run("make", "libgo-2.6/build");
@@ -37,7 +37,7 @@ vmake.tasks.libgo = () => {
     fs.writeFileSync("publish/vmakepkg.json", JSON.stringify({
         "name": "libgo",
         "version": "2.6.0",
-        "repo": "http://localhost:19901/vmake-repo"
+        "repo": vmake.get_config("repo", "http://localhost:19901/vmake-repo")
     }, null, 4));
     vmake.run("vmake publish", "publish");
 }

@@ -17,7 +17,7 @@ vmake.target("app", "bin", (dest) => {
     dest.add_cxxflag("-finput-charset=UTF-8");
     dest.add_cxxflag("-Wextra");
 
-    dest.add_package("${vmake.global_config("repo", "http://localhost:19901/vmake-repo")}", {
+    dest.add_package("${vmake.get_config("repo", "http://localhost:19901/vmake-repo")}", {
       "log": "1.0.0",
       "json": "1.0.0",
     });

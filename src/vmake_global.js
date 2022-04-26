@@ -9,6 +9,7 @@ const printf = require("printf");
 global.vmake = {
     args: process.argv.splice(2),
     tasks: {},
+    config: { wating_load: true }
 };
 
 vmake.mkdirs = function (dirname) {
@@ -134,19 +135,36 @@ vmake.rm = function (path) {
     do_rm(path);
 }
 
-vmake.global_config = function (name, default_val) {
+vmake.get_config = function (name, default_val) {
     const USER_HOME = process.env.HOME || process.env.USERPROFILE;
-    let config = {};
-    if (fs.existsSync(USER_HOME + "/.vmake")) {
-        config = JSON.parse(fs.readFileSync(USER_HOME + "/.vmake").toString());
+
+    if (vmake.config.wating_load) {
+        let config = {};
+        if (fs.existsSync(USER_HOME + "/.vmake")) {
+            config = JSON.parse(fs.readFileSync(USER_HOME + "/.vmake").toString());
+        }
+        vmake.config = config;
+        if (vmake.config.wating_load) {
+            delete vmake.config.wating_load;
+        }
     }
-    if (!config[name]) {
-        config[name] = default_val;
-        fs.writeFileSync(USER_HOME + "/.vmake", JSON.stringify(config, null, 4));
+
+    if (!name) {
+        return;
+    }
+
+    if (!vmake.config[name]) {
+        vmake.config[name] = default_val;
+        fs.writeFileSync(USER_HOME + "/.vmake", JSON.stringify(vmake.config, null, 4));
         return default_val;
     } else {
-        return config[name];
+        return vmake.config[name];
     }
+}
+
+vmake.set_config = function (name, value) {
+    vmake.get_config();
+    vmake.config[name] = value;
 }
 
 vmake.time_format = function (time) {
@@ -166,7 +184,7 @@ vmake.time_format = function (time) {
 }
 
 vmake.debug = function (fmt, ...args) {
-    if (vmake.global_config("debug", false)) {
+    if (vmake.get_config("debug", false)) {
         console.log(fmt, ...args);
     }
 }
