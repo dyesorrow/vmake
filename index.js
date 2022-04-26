@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-const fs = require('fs');
 
-require("./src/vmake_util.js");
+require("./src/vmake_global.js");
 require("./src/task_build.js");
 require("./src/task_help.js");
 require("./src/task_init.js");

@@ -21,7 +21,7 @@ async function handle_pkg(dest, dest_dir, config) {
 
         try {
             // 优先使用远程的md5文件
-            let remote_md5 = await vmake.util.get_content(remote_pre + ".md5");
+            let remote_md5 = await vmake.get_content(remote_pre + ".md5");
             let md5_data = JSON.parse(remote_md5);
             let changed = false;
             for (const it in md5_data) {
@@ -430,6 +430,6 @@ vmake.tasks.build = function (target) {
             process.exit();
         }
 
-        vmake.success("[100%] build end! time cost: %s", vmake.util.time_format(Date.now() - start_time));
+        vmake.success("[100%] build end! time cost: %s", vmake.time_format(Date.now() - start_time));
     });
 };
