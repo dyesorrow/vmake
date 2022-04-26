@@ -1,6 +1,7 @@
-vmake.tasks.libgo = () => {
+vmake.tasks.libgo = async () => {
     const fs = require("fs");
     const os = require("os");
+    const inquirer = require('inquirer');
 
     if (os.platform() != "linux") {
         vmake.error("only for linux, current platform: %s", os.platform());
@@ -10,8 +11,14 @@ vmake.tasks.libgo = () => {
     const target = "libgo";
 
     if (fs.existsSync(target)) {
-        vmake.warn("Target[%s] dir exist!", target);
+        vmake.warn("Target [%s] dir exist!", target);
+        let answer = await inquirer.prompt({ message: "continue and delete this dir (y/n)", name: "input" });
+        if (answer.input.toUpperCase() != "Y") {
+            return;
+        }
     }
+
+    vmake.rm(target);
     vmake.mkdirs(target);
     process.chdir(target);
 

@@ -16,6 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "adm-zip": "^0.5.9",
+    "inquirer": "^8.2.2",
     "printf": "^0.6.1"
   }
 }
