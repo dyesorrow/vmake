@@ -17,6 +17,7 @@
   "dependencies": {
     "adm-zip": "^0.5.9",
     "inquirer": "^8.2.2",
+    "node-fetch": "^2.6.7",
     "printf": "^0.6.1",
     "wget-improved": "^3.3.1"
   }

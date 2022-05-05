@@ -2,6 +2,7 @@ const exec = require('child_process').execSync;
 const fs = require('fs');
 const os = require('os');
 const adm_zip = require("adm-zip");
+const fetch = require('node-fetch');
 
 
 function dir_md5(...dir_list) {
@@ -21,6 +22,20 @@ function dir_md5(...dir_list) {
     return data;
 }
 
+async function upload(local, remote) {
+    try {
+        vmake.info("upload: %s > %s", local, remote);
+        let readStream = fs.createReadStream(local);
+        await fetch(remote, {
+            method: "PUT",
+            body: readStream
+        })
+    } catch (error) {
+        console.log(error);
+        process.exit(1);
+    }
+}
+
 
 vmake.tasks.publish = function () {
     vmake.debug("publish");
@@ -36,6 +51,7 @@ vmake.tasks.publish = function () {
         is_init = true;
         vmake.info("init vmakepkg.json");
     }
+
 
     if (!fs.existsSync("./include/")) {
         vmake.mkdirs("include");
@@ -53,6 +69,12 @@ vmake.tasks.publish = function () {
         vmake.mkdirs("bin");
         is_init = true;
         vmake.info("init dir ./bin, push resource files, dlls here");
+    }
+
+    if (!fs.existsSync("./src/")) {
+        vmake.mkdirs("src");
+        is_init = true;
+        vmake.info("init dir ./src");
     }
 
     if (!fs.existsSync("./readme.md")) {
@@ -73,6 +95,8 @@ vmake.tasks.publish = function () {
             return;
         }
 
+
+        vmake.info("[0%] the configuration is as follows: ");
         console.log(config);
 
         vmake.mkdirs(".publish");
@@ -83,21 +107,23 @@ vmake.tasks.publish = function () {
         } catch (error) {
         }
 
-        fs.writeFileSync(".publish/files.md5", JSON.stringify(dir_md5("lib", "include", "bin"), null, 4));
+        fs.writeFileSync(".publish/files.md5", JSON.stringify(dir_md5("lib", "include", "bin", "src"), null, 4));
 
         const zip = new adm_zip();
         zip.addLocalFolder("lib", "lib");
         zip.addLocalFolder("include", "include");
+        zip.addLocalFolder("src", "src");
         zip.addLocalFolder("bin", "bin");
         zip.addLocalFile("readme.md");
         zip.writeZip(".publish/dest.zip");
 
         fs.writeFileSync(".publish/md5.txt", JSON.stringify(dir_md5("lib", "include", "bin", ".publish/dest.zip"), null, 4));
+
         let pre = `${config.repo}/${config.name}/${os.platform()}-${config.version}`;
-        console.log("upload >>> ", pre);
-        exec(`curl -X PUT -T "./.publish/dest.zip" "${pre}.zip"`);
-        exec(`curl -X PUT -T "./.publish/md5.txt" "${pre}.md5"`);
-        exec(`curl -X PUT -T "./readme.md" "${config.repo}/${config.name}/readme.md"`);
+        vmake.info("[50%] upload >>> %s", pre);
+        upload("./.publish/dest.zip", `${pre}.zip`);
+        upload("./.publish/md5.txt", `${pre}.md5`);
+        upload("./readme.md", `${config.repo}/${config.name}/readme.md`);
 
         vmake.success("%s", "[100%] success!");
     } catch (error) {
