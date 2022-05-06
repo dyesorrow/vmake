@@ -26,41 +26,52 @@ function find_vamkejs(dir, todo) {
     }
 }
 
-try {
-    find_vamkejs(process.cwd(), (vmakejs) => {
-        process.chdir(path.dirname(vmakejs)); // 更改主工作目录
-        require(vmakejs);
-    });
+function run() {
+    try {
+        if (vmake.args.length != 0 && vmake.task[vmake.args[0]]) {
+            vmake.task[vmake.args[0]]();
+            return;
+        }
 
-    if (vmake.args.length == 0 || !vmake.task[vmake.args[0]]) {
-        const inner_tasks = {
-            "help": true,
-            "publish": true,
-            "init": true,
-        };
-        let find = false;
-        for (const key in vmake.task) {
-            if (!inner_tasks[key]) {
-                vmake.task[key]();
-                find = true;
-                break;
+        find_vamkejs(process.cwd(), (vmakejs) => {
+            process.chdir(path.dirname(vmakejs)); // 更改主工作目录
+            require(vmakejs);
+        });
+
+        if (vmake.args.length == 0 || !vmake.task[vmake.args[0]]) {
+            const inner_tasks = {
+                "help": true,
+                "publish": true,
+                "init": true,
+            };
+            let find = false;
+            for (const key in vmake.task) {
+                if (!inner_tasks[key]) {
+                    vmake.task[key]();
+                    find = true;
+                    break;
+                }
+            }
+            if (!find) {
+                vmake.task.help();
             }
         }
-        if (!find) {
+        else {
+            vmake.task[vmake.args[0]]();
+        }
+    } catch (error) {
+        if (error instanceof RangeError) {
+            vmake.error("%s", "No vmake project. Not find vmake.js!");
             vmake.task.help();
+        } else {
+            vmake.error("%s", error);
         }
     }
-    else {
-        vmake.task[vmake.args[0]]();
-    }
-} catch (error) {
-    if (error instanceof RangeError) {
-        vmake.error("%s", "No vmake project. Not find vmake.js!");
-        vmake.task.help();
-    } else {
-        vmake.error("%s", error);
-    }
 }
+
+run();
+
+
 
 
 
