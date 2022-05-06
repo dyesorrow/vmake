@@ -37,7 +37,7 @@ async function upload(local, remote) {
 }
 
 
-vmake.tasks.publish = function () {
+vmake.task.publish = function () {
     vmake.debug("publish");
 
     let is_init = false;

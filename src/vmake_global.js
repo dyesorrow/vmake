@@ -9,7 +9,7 @@ const wget = require('wget-improved');
 
 global.vmake = {
     args: process.argv.splice(2),
-    tasks: {},
+    task: {},
     config: { wating_load: true }
 };
 
@@ -112,6 +112,9 @@ vmake.copy = function (source, dest, check_md5) {
                 do_copy(fsource + "/" + it, fdest + "/" + it);
             }
         } else {
+            if (!fs.existsSync(Path.dirname(fdest))) {
+                fs.mkdirSync(Path.dirname(fdest));
+            }
             fs.copyFileSync(fsource, fdest);
         }
     }

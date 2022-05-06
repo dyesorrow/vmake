@@ -72,7 +72,7 @@ vmake.target("app", "bin", (dest) => {
 });
 
 // 添加任务
-vmake.tasks.exmaple = () => {
+vmake.task.exmaple = () => {
     console.log("hello world");
 }
 ```

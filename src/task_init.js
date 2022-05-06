@@ -4,63 +4,54 @@ const fs = require('fs');
 
 
 
-vmake.tasks.init = function () {
+vmake.task.init = function () {
   vmake.mkdirs("src");
 
   if (!fs.existsSync("vmake.js"))
     fs.writeFileSync("vmake.js", `// more help: https://github.com/dyesorrow/vmake
-vmake.target("app", "bin", (dest) => {
-    dest.add_cxxflag("-g");
-    dest.add_cxxflag("-std=c++17");
-    dest.add_cxxflag("-Wall");
-    dest.add_cxxflag("-Wno-write-strings -Wno-unused-parameter -Wno-sign-compare -Wno-format-security");
-    dest.add_cxxflag("-finput-charset=UTF-8");
-    dest.add_cxxflag("-Wextra");
 
-    dest.add_package("${vmake.get_config("repo", "http://localhost:19901/vmake-repo")}", {
-      "log": "1.0.0",
-      "json": "1.0.0",
+vmake.task.build = async function () {
+    let target = vmake.build("app", "bin");
+
+    target.add_cxxflag("-g");
+    target.add_cxxflag("-std=c++17");
+    target.add_cxxflag("-Wall");
+    target.add_cxxflag("-Wno-write-strings -Wno-unused-parameter -Wno-sign-compare -Wno-format-security");
+    target.add_cxxflag("-finput-charset=UTF-8");
+    target.add_cxxflag("-Wextra");
+
+    target.add_package("${vmake.get_config("repo", "http://localhost:19901/vmake-repo")}", {
+        "log": "1.0.0",
+        "json": "1.0.0",
     });
 
-    dest.add_define("__DEBUG__");
-    dest.add_include("src");
-    dest.add_files("src/*.cpp");
-    // dest.add_objs("res/icon/icon.o");
+    target.add_define("__DEBUG__");
+    target.add_include("src");
+    target.add_files("src/*.cpp");
+    // target.add_objs("res/icon/icon.o");
 
-    dest.add_ldflag("-static -pthread");
-    // dest.add_ldflag("-ldl -lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive");
+    target.add_ldflag("-static -pthread");
+    // target.add_ldflag("-ldl -lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive");
 
-    // dest.add_before(()=>{
-    //     console.log("todo something");
-    // });
-
-    dest.add_after(() => {
-        vmake.copy(dest.dir() + "/app", "bin/app");
-    });
-}); 
+    target.set_outdir("bin");
+    
+    await target.build();
+}; 
 `);
 
   if (!fs.existsSync(".clang-format"))
     fs.writeFileSync(".clang-format", `---
 # https://clang.llvm.org/docs/ClangFormatStyleOptions.html
-# 语言: None, Cpp, Java, JavaScript, ObjC, Proto, TableGen, TextProto
 #    // clang-format off
 #    // clang-format on
 Language:        Cpp
-# BasedOnStyle:  Google
-# 访问说明符(public、private等)的偏移
 AccessModifierOffset: -4
-# 开括号(开圆括号、开尖括号、开方括号)后的对齐: Align, DontAlign, AlwaysBreak(总是在开括号后换行)
 AlignAfterOpenBracket: DontAlign
-# 连续赋值时，对齐所有等号
 AlignConsecutiveAssignments: false
 
 AlignConsecutiveMacros: false
-# 连续声明时，对齐所有声明的变量名
 AlignConsecutiveDeclarations: false
-# 左对齐逃脱换行(使用反斜杠换行)的反斜杠
 AlignEscapedNewlines: Left
-# 水平对齐二元和三元表达式的操作数
 AlignOperands:   true
 AlignTrailingComments: true
 AllowAllArgumentsOnNextLine: true
