@@ -391,12 +391,7 @@ vmake.build = function (target_name, target_type) {
                 process.exit();
             }
             if (target_config.outdir) {
-                if (os.platform() == "win32") {
-                    vmake.copy(target.target_dir + "/" + target_name + ".exe", path.join(target_config.outdir, target_name + ".exe"));
-                }
-                else if (os.platform() == "linux") {
-                    vmake.copy(target.target_dir + "/" + target_name, path.join(target_config.outdir, target_name));
-                }
+                vmake.copy(target.target_dir, target_config.outdir);
             }
             vmake.success("[100%] build end! time cost: %s", time_format(Date.now() - start_time));
         }

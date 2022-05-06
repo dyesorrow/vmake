@@ -28,7 +28,7 @@ vmake.task.build = async function () {
 
     target.add_ldflag("-static -pthread");
 
-    target.set_outdir("bin");
+    target.set_outdir("./dest");
 
     await target.build();
 }; 
