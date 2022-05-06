@@ -1,9 +1,6 @@
-const exec = require('child_process').execSync;
 const fs = require('fs');
 const os = require('os');
 const adm_zip = require("adm-zip");
-const fetch = require('node-fetch');
-
 
 function dir_md5(...dir_list) {
     let data = {};
@@ -22,27 +19,12 @@ function dir_md5(...dir_list) {
     return data;
 }
 
-async function upload(local, remote) {
-    try {
-        vmake.info("upload: %s > %s", local, remote);
-        let readStream = fs.createReadStream(local);
-        await fetch(remote, {
-            method: "PUT",
-            body: readStream
-        })
-    } catch (error) {
-        console.log(error);
-        process.exit(1);
-    }
-}
-
 
 vmake.task.publish = function () {
     vmake.debug("publish");
 
     let is_init = false;
     if (!fs.existsSync("./vmakepkg.json")) {
-        // 创建 vmakepkg.json, 并报错
         fs.writeFileSync("vmakepkg.json", JSON.stringify({
             name: "",
             version: "1.0.0",
@@ -52,29 +34,19 @@ vmake.task.publish = function () {
         vmake.info("init vmakepkg.json");
     }
 
+    const init_dir = {
+        "include": "init dir ./include",
+        "lib": "init dir ./lib",
+        "bin": "init dir ./bin, push resource files, dlls here",
+        "src": "init dir ./src"
+    };
 
-    if (!fs.existsSync("./include/")) {
-        vmake.mkdirs("include");
-        is_init = true;
-        vmake.info("init dir ./include");
-    }
-
-    if (!fs.existsSync("./lib/")) {
-        vmake.mkdirs("lib");
-        is_init = true;
-        vmake.info("init dir ./lib");
-    }
-
-    if (!fs.existsSync("./bin/")) {
-        vmake.mkdirs("bin");
-        is_init = true;
-        vmake.info("init dir ./bin, push resource files, dlls here");
-    }
-
-    if (!fs.existsSync("./src/")) {
-        vmake.mkdirs("src");
-        is_init = true;
-        vmake.info("init dir ./src");
+    for (const dir in init_dir) {
+        if (!fs.existsSync("./" + dir + "/")) {
+            vmake.mkdirs(dir);
+            is_init = true;
+            vmake.info(init_dir[dir]);
+        }
     }
 
     if (!fs.existsSync("./readme.md")) {
@@ -94,7 +66,6 @@ vmake.task.publish = function () {
             vmake.info("vmakepkg.json is init file, not set name, will not publish");
             return;
         }
-
 
         vmake.info("[0%] the configuration is as follows: ");
         console.log(config);
@@ -121,9 +92,10 @@ vmake.task.publish = function () {
 
         let pre = `${config.repo}/${config.name}/${os.platform()}-${config.version}`;
         vmake.info("[50%] upload >>> %s", pre);
-        upload("./.publish/dest.zip", `${pre}.zip`);
-        upload("./.publish/md5.txt", `${pre}.md5`);
-        upload("./readme.md", `${config.repo}/${config.name}/readme.md`);
+
+        vmake.upload("./.publish/dest.zip", `${pre}.zip`);
+        vmake.upload("./.publish/md5.txt", `${pre}.md5`);
+        vmake.upload("./readme.md", `${config.repo}/${config.name}/readme.md`);
 
         vmake.success("%s", "[100%] success!");
     } catch (error) {

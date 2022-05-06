@@ -1,8 +1,4 @@
-const exec = require('child_process').execSync;
 const fs = require('fs');
-
-
-
 
 vmake.task.init = function () {
   vmake.mkdirs("src");
@@ -34,7 +30,7 @@ vmake.task.build = async function () {
     // target.add_ldflag("-ldl -lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive");
 
     target.set_outdir("bin");
-    
+
     await target.build();
 }; 
 `);

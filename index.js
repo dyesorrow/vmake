@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 
 require("./src/vmake_global.js");
+require("./src/vmake_net.js");
+require("./src/vmake_log.js");
+require("./src/vmake_config.js");
+require("./src/vmake_os.js");
+
+
 require("./src/task_build.js");
 require("./src/task_help.js");
 require("./src/task_init.js");
@@ -25,7 +31,6 @@ try {
         process.chdir(path.dirname(vmakejs)); // 更改主工作目录
         require(vmakejs);
     });
-
 
     if (vmake.args.length == 0 || !vmake.task[vmake.args[0]]) {
         const inner_tasks = {

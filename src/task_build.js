@@ -295,6 +295,22 @@ async function target_link(target) {
     process.exit();
 }
 
+function time_format(time) {
+    let result = "";
+    let unum = [1, 1000, 60, 60, 24, 0x7fffffff];
+    let utxt = ["ms", "s", "m", "h", "d"];
+    for (let i = 0; i < unum.length - 1; i++) {
+        if (time / unum[i + 1] >= 1) {
+            result = (time % unum[i + 1]) + utxt[i] + result;
+            time = Math.floor(time / unum[i + 1]);
+        } else {
+            result = time + utxt[i] + result;
+            break;
+        }
+    }
+    return result;
+}
+
 vmake.build = function (target_name, target_type) {
     const build_dir = "build/" + target_name + "/" + os.platform();
     vmake.mkdirs(build_dir);
@@ -382,7 +398,7 @@ vmake.build = function (target_name, target_type) {
                     vmake.copy(target.target_dir + "/" + target_name, path.join(target_config.outdir, target_name));
                 }
             }
-            vmake.success("[100%] build end! time cost: %s", vmake.time_format(Date.now() - start_time));
+            vmake.success("[100%] build end! time cost: %s", time_format(Date.now() - start_time));
         }
     };
     return target;
