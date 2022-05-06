@@ -39,7 +39,7 @@ vmake.task.build = async function () {
     target.add_cxxflag("-finput-charset=UTF-8");
     target.add_cxxflag("-Wextra");
 
-    target.add_package("http://119.29.164.225:19901/vmake-repo", {
+    target.add_package("http://localhost:19901/vmake-repo", {
         "log": "1.0.0",
         "json": "1.0.0",
     });
