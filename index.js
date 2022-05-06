@@ -8,23 +8,44 @@ require("./src/task_publish.js");
 
 vmake.debug("%s", vmake.args);
 
-try {
-    if (vmake.args.length == 0) {
-        vmake.tasks.build();
+function find_vamkejs(dir, todo) {
+    let file = path.join(dir, "vmake.js");
+    if (fs.existsSync(file)) {
+        todo(file);
     } else {
-        if(vmake.args[0] == "build"){
-            vmake.tasks.build(vmake.args[1]);
-        }
-        else if (vmake.tasks[vmake.args[0]]) {
+        find_vamkejs(path.dirname(dir), todo);
+    }
+}
+
+try {
+    find_vamkejs(process.cwd(), (vmakejs) => {
+        process.chdir(path.dirname(vmakejs)); // 更改主工作目录
+        require(vmakejs);
+    })
+    if (vmake.args.length == 0) {
+        vmake.tasks.help();
+    }
+    else {
+        if (vmake.tasks[vmake.args[0]]) {
             vmake.tasks[vmake.args[0]]();
         } else {
-            vmake.tasks.build(vmake.args[0]);
+            const inner_tasks = {
+                "help": true,
+                "publish": true,
+                "init": true,
+            }
+            for (const key in vmake.tasks) {
+                if (!inner_tasks[key]) {
+                    vmake.tasks[key]();
+                }
+            }
         }
     }
 } catch (error) {
-    if(error instanceof RangeError){
+    if (error instanceof RangeError) {
         vmake.error("%s", "No vmake project. Not find vmake.js!");
-    }else{
+        vmake.tasks.help();
+    } else {
         vmake.error("%s", error);
     }
 }

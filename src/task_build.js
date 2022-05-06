@@ -3,12 +3,12 @@ const path = require('path');
 const os = require('os');
 const adm_zip = require("adm-zip");
 
-async function handle_pkg(dest, dest_dir, config) {
-    vmake.debug("handle ", dest, dest_dir, config);
+async function handle_pkg(dest, build_dir, target_config) {
+    vmake.debug("handle ", dest, build_dir, target_config);
 
-    let remote_pre = config.repo + "/" + config.name + "/" + os.platform() + "-" + config.version;
-    let local_zip = dest_dir + "/lib/" + config.name + "-" + config.version + ".zip";
-    let pkg_dir = dest_dir + "/lib/" + config.name;
+    let remote_pre = target_config.repo + "/" + target_config.name + "/" + os.platform() + "-" + target_config.version;
+    let local_zip = build_dir + "/lib/" + target_config.name + "-" + target_config.version + ".zip";
+    let pkg_dir = build_dir + "/lib/" + target_config.name;
 
     let include_dir = pkg_dir + "/include";
     let lib_dir = pkg_dir + "/lib";
@@ -39,14 +39,14 @@ async function handle_pkg(dest, dest_dir, config) {
                 }
             }
             if (changed) {
-                vmake.warn("%s: remote package have changed, will download newest", config.name);
+                vmake.warn("%s: remote package have changed, will download newest", target_config.name);
                 return false;
             }
 
             return true;
         } catch (error) {
             // 如果远程的md5文件无法使用，则只判断文件夹是否存在
-            vmake.warn("%s: %s. will ignore the check for this dependency", config.name, error);
+            vmake.warn("%s: %s. will ignore the check for this dependency", target_config.name, error);
             return true;
         }
     }
@@ -69,16 +69,16 @@ async function handle_pkg(dest, dest_dir, config) {
     if (fs.existsSync(bin_dir)) {
         vmake.debug("check bin dir");
         for (const it of fs.readdirSync(bin_dir)) {
-            vmake.debug("copy %s to %s", it, dest_dir + "/dest/" + it);
-            fs.cpSync(bin_dir + "/" + it, dest_dir + "/dest/" + it, {
+            vmake.debug("copy %s to %s", it, build_dir + "/dest/" + it);
+            fs.cpSync(bin_dir + "/" + it, build_dir + "/dest/" + it, {
                 force: true
             });
         }
     }
     if (fs.existsSync(lib_dir)) {
         if (fs.readdirSync(lib_dir).length > 0) {
-            vmake.debug("add link " + config.name);
-            dest.add_link(config.name);
+            vmake.debug("add link " + target_config.name);
+            dest.add_link(target_config.name);
         }
     }
 }
@@ -221,25 +221,25 @@ async function vscode_cpp_properties(config) {
     fs.writeFileSync(".vscode/c_cpp_properties.json", JSON.stringify(configurations, null, 4));
 }
 
-async function target_link(target_config) {
+async function target_link(target_config, build_dir, target_name, target_type) {
 
-    vmake.mkdirs(target_config.dir + "/dest");
+    vmake.mkdirs(build_dir + "/dest");
 
     // vmake.info("[%3d%] %s", 98, "dest link");
 
     let links = [];
-    for (const it of target_config.config.link) {
+    for (const it of target_config.link) {
         links.push("-l" + it);
     }
-    target_config.config.ldflags = links.concat(target_config.config.ldflags);
+    target_config.ldflags = links.concat(target_config.ldflags);
 
-    if (target_config.type == "bin") {
+    if (target_type == "bin") {
         // 链接
-        let command = `g++ ${target_config.dir}/obj/*.o ` + target_config.config.objs.join(" ");
-        for (const lib of target_config.config.libdirs) {
+        let command = `g++ ${build_dir}/obj/*.o ` + target_config.objs.join(" ");
+        for (const lib of target_config.libdirs) {
             command += " -L " + lib;
         }
-        command += " -o " + target_config.dir + "/dest/" + target_config.name + " " + target_config.config.ldflags.join(" ");
+        command += " -o " + build_dir + "/dest/" + target_name + " " + target_config.ldflags.join(" ");
         try {
             vmake.info("[%3d%] %s", 99, command);
             vmake.run(command);
@@ -247,11 +247,12 @@ async function target_link(target_config) {
             vmake.error("%s", error);
             process.exit();
         }
+        return;
     }
 
-    if (target_config.type == "static") {
+    if (target_type == "static") {
         // 静态链接库
-        let command = `ar rcs ${target_config.dir + "/dest/lib" + target_config.name}.a ${target_config.dir}/obj/*.o ` + target_config.config.objs.join(" ");
+        let command = `ar rcs ${build_dir + "/dest/lib" + target_name}.a ${build_dir}/obj/*.o ` + target_config.objs.join(" ");
         try {
             vmake.info("[%3d%] %s", 99, command);
             vmake.run(command);
@@ -259,19 +260,20 @@ async function target_link(target_config) {
             vmake.error("%s", error);
             process.exit();
         }
+        return;
     }
 
-    if (target_config.type == "shared") {
+    if (target_type == "shared") {
         // 动态链接库
-        let command = `g++ --shared ${target_config.dir}/obj/*.o` + target_config.config.objs.join(" ");
-        for (const lib of target_config.config.libdirs) {
+        let command = `g++ --shared ${build_dir}/obj/*.o` + target_config.objs.join(" ");
+        for (const lib of target_config.libdirs) {
             command += " -L " + lib;
         }
         if (os.platform() == "win32") {
-            command += " -o " + target_config.dir + "/dest/lib" + target_config.name + ".dll " + target_config.config.ldflags.join(" ");
+            command += " -o " + build_dir + "/dest/lib" + target_name + ".dll " + target_config.ldflags.join(" ");
         }
         if (os.platform() == "linux") {
-            command += " -o " + target_config.dir + "/dest/lib" + target_config.name + ".so " + target_config.config.ldflags.join(" ");
+            command += " -o " + build_dir + "/dest/lib" + target_name + ".so " + target_config.ldflags.join(" ");
         }
         try {
             vmake.info("[%3d%] %s", 99, command);
@@ -280,16 +282,17 @@ async function target_link(target_config) {
             vmake.error("%s", error);
             process.exit();
         }
+        return;
     }
+    vmake.error("Not support target [%s], please choose from the following: bin, static, shared", target_type);
+    process.exit();
 }
 
+vmake.target = function (target_name, taget_type) {
+    const build_dir = "build/" + target_name + "/" + os.platform();
+    vmake.mkdirs(build_dir);
 
-vmake.target_configs = {};
-vmake.target = function (name, type, user_handle) {
-    const dir = "build/" + name + "/" + os.platform();
-    vmake.mkdirs(dir);
-
-    let config = {
+    let target_config = {
         packages: [],
         cxxflags: [],
         includes: [],
@@ -303,12 +306,15 @@ vmake.target = function (name, type, user_handle) {
         objs: [],
     };
     let dest = {
-        dir: () => {
-            return dir + "/dest";
+        build_dir: build_dir,
+        dest_dir: build_dir + "/dest",
+        set_outdir: (outdir) => {
+
+            target_config.outdir = outdir;
         },
         add_package: (repo, target_map) => {
             for (const key in target_map) {
-                config.packages.push({
+                target_config.packages.push({
                     repo,
                     name: key,
                     version: target_map[key]
@@ -316,120 +322,59 @@ vmake.target = function (name, type, user_handle) {
             }
         },
         add_cxxflag: (data) => {
-            config.cxxflags.push(data);
+            target_config.cxxflags.push(data);
         },
         add_include: (data) => {
-            config.includes.push(data);
+            target_config.includes.push(data);
         },
         add_define: (data) => {
-            config.defines.push(data);
+            target_config.defines.push(data);
         },
         add_files: (data) => {
-            config.files.push(data);
+            target_config.files.push(data);
         },
         add_objs: (data) => {
-            config.objs.push(data);
+            target_config.objs.push(data);
         },
         add_libdir: (data) => {
-            config.libdirs.push(data);
+            target_config.libdirs.push(data);
         },
         add_ldflag: (data) => {
-            config.ldflags.push(data);
+            target_config.ldflags.push(data);
         },
         add_before: (func) => {
-            config.before.push(func);
+            target_config.before.push(func);
         },
         add_after: (func) => {
-            config.after.push(func);
-        }
-    };
-    user_handle(dest);
-
-    dest.add_link = (data) => {
-        config.link.push(data);
-    };
-
-    vmake.target_configs[name] = {
-        dir: dir,
-        dest: dest,
-        name: name,
-        type: type,
-        config: config
-    };
-};
-
-function find_vamkejs(dir, todo) {
-    let file = path.join(dir, "vmake.js");
-    if (fs.existsSync(file)) {
-        todo(file);
-    } else {
-        find_vamkejs(path.dirname(dir), todo);
-    }
-}
-
-vmake.tasks.build = function (target) {
-    vmake.debug("build");
-
-    find_vamkejs(process.cwd(), async (vmakejs) => {
-        let start_time = Date.now();
-
-        process.chdir(path.dirname(vmakejs)); // 更改主工作目录
-
-        require(vmakejs);
-
-        let target_config;
-
-        // 如果指定目标，则构建指定目标
-        if (target) {
-            target_config = vmake.target_configs[target];
-        }
-
-        // 找不到目标
-        if (!target_config) {
-            // 如果有对应的任务，则执行对应的任务
-            if (vmake.tasks[target]) {
-                vmake.tasks[target]();
-                return;
-            }
-
-            // 设置默认目标
-            if (!target && Object.keys(vmake.target_configs).length > 0) {
-                target_config = vmake.target_configs[Object.keys(vmake.target_configs)[0]];
-            } else {
-                vmake.error("Not find task or target for [%s] !", target);
+            target_config.after.push(func);
+        },
+        add_link: (data) => {
+            target_config.link.push(data);
+        },
+        get_config: () => {
+            return target_config;
+        },
+        build: () => {
+            let start_time = Date.now();
+            vmake.info("Project: %s -> %s, %s", process.cwd(), target_name, taget_type);
+            try {
+                await target_complie(dest, build_dir, target_config);
+                await target_link(target_config, build_dir, target_name, taget_type);
+                await vscode_cpp_properties(target_config);
+            } catch (error) {
+                vmake.error("%s", error);
                 process.exit();
             }
-        }
-
-        vmake.info("Project: %s -> %s, %s", path.dirname(vmakejs), target_config.name, target_config.type);
-
-        try {
-            for (const func of target_config.config.before) {
-                func();
+            if (target_config.outdir) {
+                if (os.platform() == "win32") {
+                    vmake.copy(dest.dest_dir + "/" + target_name + ".exe", path.join(target_config.outdir, target_name + ".exe"));
+                }
+                else if (os.platform() == "linux") {
+                    vmake.copy(dest.dest_dir + "/" + target_name, path.join(target_config.outdir, target_name));
+                }
             }
-        } catch (error) {
-            vmake.error("%s", error);
-            process.exit();
+            vmake.success("[100%] build end! time cost: %s", vmake.time_format(Date.now() - start_time));
         }
-
-        try {
-            await target_complie(target_config.dest, target_config.dir, target_config.config);
-            await target_link(target_config);
-            await vscode_cpp_properties(target_config.config);
-        } catch (error) {
-            vmake.error("%s", error);
-            process.exit();
-        }
-
-        try {
-            for (const func of target_config.config.after) {
-                func();
-            }
-        } catch (error) {
-            vmake.error("%s", error);
-            process.exit();
-        }
-
-        vmake.success("[100%] build end! time cost: %s", vmake.time_format(Date.now() - start_time));
-    });
+    };
+    return dest;
 };
