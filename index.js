@@ -5,6 +5,8 @@ require("./src/vmake_net.js");
 require("./src/vmake_log.js");
 require("./src/vmake_config.js");
 require("./src/vmake_os.js");
+require("./src/vmake_util.js");
+
 
 
 require("./src/task_build.js");
@@ -34,8 +36,8 @@ function run() {
         }
 
         find_vamkejs(process.cwd(), (vmakejs) => {
-            process.chdir(path.dirname(vmakejs)); // 更改主工作目录
             require(vmakejs);
+            process.chdir(path.dirname(vmakejs)); // 更改主工作目录
         });
 
         if (vmake.args.length == 0 || !vmake.task[vmake.args[0]]) {

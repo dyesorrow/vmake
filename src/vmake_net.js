@@ -79,19 +79,23 @@ vmake.get_content = function (uri) {
 vmake.wget = function (src, dist, option) {
     return new Promise((resolve, reject) => {
         let download = wget.download(src, dist, option);
+        let process_bar = vmake.process_bar(src + ": ");
         download.on('error', function (err) {
+            process_bar.end();
             console.log(err);
             reject();
         });
         download.on('start', function (fileSize) {
-            console.log(fileSize);
+            process_bar.start();
         });
         download.on('end', function (output) {
-            console.log(output);
+            process_bar.end();
             resolve();
         });
         download.on('progress', function (progress) {
-            console.log(progress);
+            if (typeof progress === 'number') {
+                process_bar.set_process(progress);
+            }
         });
     });
 };
