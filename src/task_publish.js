@@ -20,7 +20,7 @@ function dir_md5(...dir_list) {
 }
 
 
-vmake.task.publish = function () {
+vmake.task.publish = async function () {
     vmake.debug("publish");
 
     let is_init = false;
@@ -93,9 +93,9 @@ vmake.task.publish = function () {
         let pre = `${config.repo}/${config.name}/${os.platform()}-${config.version}`;
         vmake.info("[50%] upload >>> %s", pre);
 
-        vmake.upload("./.publish/dest.zip", `${pre}.zip`);
-        vmake.upload("./.publish/md5.txt", `${pre}.md5`);
-        vmake.upload("./readme.md", `${config.repo}/${config.name}/readme.md`);
+        await vmake.upload("./.publish/dest.zip", `${pre}.zip`);
+        await vmake.upload("./.publish/md5.txt", `${pre}.md5`);
+        await vmake.upload("./readme.md", `${config.repo}/${config.name}/readme.md`);
 
         vmake.success("%s", "[100%] success!");
     } catch (error) {

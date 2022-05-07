@@ -28,7 +28,7 @@ vmake.process_bar = function (info, piece) {
     };
 
     function print() {
-        let output = info + "[";
+        let output = "[";
         let i = 0;
         const max = 20;
         let end = Number.parseInt(bar.process * max)
@@ -40,7 +40,7 @@ vmake.process_bar = function (info, piece) {
         }
         output += "]";
         output += " " + Number.parseInt(100 * bar.process) + "%";
-        process.stdout.write("\u001b[0E");
+        process.stdout.write("\u001b[u");
         process.stdout.write(output);
     }
 
@@ -49,12 +49,13 @@ vmake.process_bar = function (info, piece) {
         print();
     }
 
-    bar.start = function(){
+    bar.start = function () {
         process.stdout.write(info);
+        process.stdout.write("\u001b[s");
         print();
     }
 
-    bar.end = function(){
+    bar.end = function () {
         process.stdout.write("\n");
     }
 

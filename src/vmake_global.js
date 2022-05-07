@@ -3,7 +3,11 @@ global.vmake = {
     task: {},
     config: { wating_load: true },
     module: {
-        inquirer: require('inquirer'),
+        "inquirer": require('inquirer'),
+        "adm-zip": require("adm-zip"),
+        "node-fetch": require("node-fetch"),
+        "wget-improved": require("wget-improved"),
+        "printf": require("printf"),
     },
 };
 

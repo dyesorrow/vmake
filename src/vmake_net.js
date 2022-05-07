@@ -3,6 +3,7 @@ const https = require("https");
 const fs = require('fs');
 const Path = require('path');
 const wget = require('wget-improved');
+const fetch = require('node-fetch');
 
 vmake.download = function (uri, dest) {
     vmake.mkdirs(Path.dirname(dest));
