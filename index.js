@@ -13,6 +13,8 @@ require("./src/task_build.js");
 require("./src/task_help.js");
 require("./src/task_init.js");
 require("./src/task_publish.js");
+require("./src/task_update.js");
+
 
 const path = require('path');
 const fs = require('fs');
@@ -45,6 +47,7 @@ function run() {
                 "help": true,
                 "publish": true,
                 "init": true,
+                "update": true
             };
             let find = false;
             for (const key in vmake.task) {
