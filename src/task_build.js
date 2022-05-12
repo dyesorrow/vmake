@@ -74,8 +74,8 @@ async function handle_pkg(target, pkg) {
     if (fs.existsSync(bin_dir)) {
         vmake.debug("check bin dir");
         for (const it of fs.readdirSync(bin_dir)) {
-            vmake.debug("copy %s to %s", it, build_dir + "/target/" + it);
-            fs.cpSync(bin_dir + "/" + it, build_dir + "/target/" + it, {
+            vmake.debug("copy %s to %s", it, build_dir + "/dest/" + it);
+            fs.cpSync(bin_dir + "/" + it, build_dir + "/dest/" + it, {
                 force: true
             });
         }
@@ -127,8 +127,8 @@ async function target_complie(target) {
         let reg = /(.+?): (.+)/g;
         let rst = reg.exec(result);
         while (rst) {
-            let depends = rst[2].split(" ");
-            vmake.debug("%s", depends);
+            let depends = rst[2].trim().split(" ");
+            vmake.debug("rst=%s, depends = %s", rst, depends);
             obj_list[depends[0]] = {};
             for (let dep of depends) {
                 dep = dep.trim();
