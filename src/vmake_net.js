@@ -5,36 +5,8 @@ const Path = require('path');
 const wget = require('wget-improved');
 const fetch = require('node-fetch');
 
-vmake.download = function (uri, dest) {
-    vmake.mkdirs(Path.dirname(dest));
-    return new Promise((resolve, reject) => {
-        vmake.info("%s", `download: ${uri} -> ${dest}`);
-        const file = fs.createWriteStream(dest);
-
-        let httpx = http;
-        if (uri.startsWith("https")) {
-            httpx = https;
-        }
-
-        httpx.get(uri, (res) => {
-            if (res.statusCode !== 200) {
-                reject(`Download error, code ${res.statusCode}: ${uri}`);
-                return;
-            }
-            res.on('end', () => {
-            });
-            file.on('finish', () => {
-                resolve();
-                file.close();
-            }).on('error', (err) => {
-                fs.unlink(dest);
-                reject(err);
-            });
-            res.pipe(file);
-        }).on("error", (error) => {
-            reject(`${error}: ${uri}`);
-        });
-    });
+vmake.download = async function (uri, dest) {
+    await vmake.wget(uri, dest);
 };
 
 vmake.upload = async function (local, remote) {
@@ -54,12 +26,10 @@ vmake.upload = async function (local, remote) {
 vmake.get_content = function (uri) {
     return new Promise((resolve, reject) => {
         let content = "";
-
         let httpx = http;
         if (uri.startsWith("https")) {
             httpx = https;
         }
-
         httpx.get(uri, (res) => {
             if (res.statusCode !== 200) {
                 reject(`Get content error, code ${res.statusCode}: ${uri}`);
