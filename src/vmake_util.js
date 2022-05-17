@@ -31,7 +31,7 @@ vmake.process_bar = function (info, piece) {
         let output = "[";
         let i = 0;
         const max = 20;
-        let end = Number.parseInt(bar.process * max)
+        let end = Number.parseInt(bar.process * max);
         for (; i < end; i++) {
             output += piece;
         }
@@ -47,17 +47,33 @@ vmake.process_bar = function (info, piece) {
     bar.set_process = function (at) {
         bar.process = at;
         print();
-    }
+    };
 
     bar.start = function () {
         process.stdout.write(info);
         process.stdout.write("\u001b[s");
         print();
-    }
+    };
 
     bar.end = function () {
         process.stdout.write("\n");
-    }
+    };
 
     return bar;
-}
+};
+
+
+// 一个快捷的上传包的函数，仅限常规.a文件
+vmake.release = function (target, includefiles, vmakepkgjson) {
+    vmake.rm(".publish");
+    vmake.mkdirs(".publish");
+    vmake.run("vmake publish", ".publish");
+    vmake.copy(target.target_dir + "/lib" + target.name + ".a", ".publish/lib" + "/lib" + target.name + ".a");
+    for (const it in includefiles) {
+        vmake.copy("src/" + it, ".publish/include/" + it);
+    }
+    const fs = require("fs");
+    fs.writeFileSync(".publish/vmakepkg.json", JSON.stringify(vmakepkgjson, null, 4));
+    vmake.run("vmake publish", ".publish");
+    vmake.rm(".publish");
+};
