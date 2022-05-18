@@ -6,6 +6,7 @@ const wget = require('wget-improved');
 const fetch = require('node-fetch');
 
 vmake.download = async function (uri, dest) {
+    vmake.mkdirs(Path.dirname(dest));
     await vmake.wget(uri, dest);
 };
 
