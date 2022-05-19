@@ -59,7 +59,7 @@ vmake.task.release = async function () {
     vmake.release(target, {
         includefiles: ["log.h", "log_rollfile.h"],
         version: "1.1.0",
-        repo: "http://119.29.164.225:19901/vmake-repo",
+        repo: "http://127.0.0.1:19901/vmake-repo",
     });
 };
 ==============================================
