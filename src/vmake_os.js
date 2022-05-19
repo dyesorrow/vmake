@@ -26,6 +26,9 @@ vmake.run = function (command, cwd) {
 };
 
 vmake.md5sum = function (file) {
+    if (!fs.existsSync(file)) {
+        return "notexist";
+    }
     const buffer = fs.readFileSync(file);
     const hash = crypto.createHash("md5");
     hash.update(buffer, "utf8");
@@ -48,6 +51,9 @@ vmake.copy = function (source, dest, filter) {
                 fs.mkdirSync(Path.dirname(fdest));
             }
             if (filter && !filter(fsource, fdest)) {
+                return;
+            }
+            if (vmake.md5sum(fsource) == vmake.md5sum(fdest)) {
                 return;
             }
             fs.copyFileSync(fsource, fdest);
