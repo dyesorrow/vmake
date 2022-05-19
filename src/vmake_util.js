@@ -62,16 +62,23 @@ vmake.process_bar = function (info, piece) {
     return bar;
 };
 
-/**
-一个快捷的上传包的函数，仅限常规vmake static工程
-
-vmake.release(target, {
-    includefiles: ["json.h"],  // 相对于src的位置
-    version: "1.1.0",
-    repo: "http://119.29.164.225:19901/vmake-repo",
-});
- */
 vmake.release = function (target, config) {
+    if (target.target_type != "static") {
+        vmake.error("function vmake.release only support static target build");
+        return false;
+    }
+    if (!config.includefiles || !config.version || !config.repo) {
+        vmake.error("config error. vmake.release example: %s", `
+
+    vmake.release(target, {
+        includefiles: ["json.h"],  // location relative to src directory
+        version: "1.1.0",
+        repo: "http://119.29.164.225:19901/vmake-repo",
+    });        
+
+        `);
+        return false;
+    }
     let includefiles = config.includefiles;
     let version = config.version;
     let repo = config.repo;
