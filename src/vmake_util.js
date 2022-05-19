@@ -63,22 +63,22 @@ vmake.process_bar = function (info, piece) {
 };
 
 vmake.release = function (target, config) {
-    if (target.target_type != "static") {
+    if (!target || target.target_type != "static") {
         vmake.error("function vmake.release only support static target build");
         return false;
     }
-    if (!config.includefiles || !config.version || !config.repo) {
-        vmake.error("config error. vmake.release example: %s", `
+    if (!config || !config.includefiles || !config.version || !config.repo) {
+        vmake.error("function vmake.release use error. right example: %s", `
 
-    vmake.release(target, {
-        includefiles: ["json.h"],  // location relative to src directory
-        version: "1.1.0",
-        repo: "http://119.29.164.225:19901/vmake-repo",
-    });        
-
+vmake.release(target, {
+    includefiles: ["json.h"],  // location relative to src directory
+    version: "1.1.0",
+    repo: "http://127.0.0.1:19901/vmake-repo",
+});
         `);
-        return false;
+        process.exit(1);
     }
+
     let includefiles = config.includefiles;
     let version = config.version;
     let repo = config.repo;
