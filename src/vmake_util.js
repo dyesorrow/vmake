@@ -24,7 +24,7 @@ vmake.process_bar = function (info, piece) {
     piece = piece || ">";
 
     let bar = {
-        process: 0,
+        process: 0
     };
 
     function print() {
@@ -78,11 +78,8 @@ vmake.release = function (target, config) {
     vmake.rm(".publish");
     vmake.mkdirs(".publish");
     vmake.run("vmake publish", ".publish");
-    vmake.copy(
-        target.target_dir + "/lib" + target.target_name + ".a",
-        ".publish/lib" + "/lib" + target.target_name + ".a"
-    );
-    for (const it in includefiles) {
+    vmake.copy(target.target_dir + "/lib" + target.target_name + ".a", ".publish/lib" + "/lib" + target.target_name + ".a");
+    for (const it of includefiles) {
         vmake.copy("src/" + it, ".publish/include/" + it);
     }
     vmake.copy("src/", ".publish/src", (source) => {
@@ -92,18 +89,11 @@ vmake.release = function (target, config) {
         return false;
     });
     const fs = require("fs");
-    fs.writeFileSync(
-        ".publish/vmakepkg.json",
-        JSON.stringify(
-            {
-                name: target.target_name,
-                version: version,
-                repo: repo,
-            },
-            null,
-            4
-        )
-    );
+    fs.writeFileSync(".publish/vmakepkg.json", JSON.stringify({
+        name: target.target_name,
+        version: version,
+        repo: repo
+    }, null, 4));
     vmake.run("vmake publish", ".publish");
     vmake.rm(".publish");
 };
