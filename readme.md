@@ -49,7 +49,7 @@ vmake.task.build = async function () {
     target.add_files("src/*.cpp");
     // target.add_objs("res/icon/icon.o");
 
-    target.add_ldflag("-static -pthread");
+    target.add_ldflag("-static -lpthread");
     // target.add_ldflag("-ldl -lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive");
 
     target.set_outdir("./");
