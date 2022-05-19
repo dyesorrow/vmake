@@ -1,7 +1,7 @@
-const nodeSpawn = require('child_process').spawnSync;
-const fs = require('fs');
-const crypto = require('crypto');
-const Path = require('path');
+const nodeSpawn = require("child_process").spawnSync;
+const fs = require("fs");
+const crypto = require("crypto");
+const Path = require("path");
 
 vmake.mkdirs = function (dirname) {
     if (fs.existsSync(dirname)) {
@@ -12,28 +12,28 @@ vmake.mkdirs = function (dirname) {
             return true;
         }
     }
-}
+};
 
 vmake.run = function (command, cwd) {
     let ret = nodeSpawn(command, {
-        stdio: 'inherit',
-        shell: true,  // 解决 console.log 颜色不显示的问题
-        cwd
+        stdio: "inherit",
+        shell: true, // 解决 console.log 颜色不显示的问题
+        cwd,
     });
     if (ret.status != 0) {
         throw "failed: " + command;
     }
-}
+};
 
 vmake.md5sum = function (file) {
     const buffer = fs.readFileSync(file);
-    const hash = crypto.createHash('md5');
-    hash.update(buffer, 'utf8');
-    const md5 = hash.digest('hex');
+    const hash = crypto.createHash("md5");
+    hash.update(buffer, "utf8");
+    const md5 = hash.digest("hex");
     return md5;
-}
+};
 
-vmake.copy = function (source, dest, check_md5) {
+vmake.copy = function (source, dest, filter) {
     function do_copy(fsource, fdest) {
         let stat = fs.statSync(fsource);
         if (stat.isDirectory()) {
@@ -47,11 +47,14 @@ vmake.copy = function (source, dest, check_md5) {
             if (!fs.existsSync(Path.dirname(fdest))) {
                 fs.mkdirSync(Path.dirname(fdest));
             }
+            if (filter && !filter(fsource, fdest)) {
+                return;
+            }
             fs.copyFileSync(fsource, fdest);
         }
     }
     do_copy(source, dest);
-}
+};
 
 vmake.rm = function (path) {
     function do_rm(dir) {
@@ -69,4 +72,4 @@ vmake.rm = function (path) {
         }
     }
     do_rm(path);
-}
+};
