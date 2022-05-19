@@ -24,7 +24,7 @@ vmake.process_bar = function (info, piece) {
     piece = piece || ">";
 
     let bar = {
-        process: 0
+        process: 0,
     };
 
     function print() {
@@ -62,18 +62,48 @@ vmake.process_bar = function (info, piece) {
     return bar;
 };
 
+/**
+一个快捷的上传包的函数，仅限常规vmake static工程
 
-// 一个快捷的上传包的函数，仅限常规.a文件
-vmake.release = function (target, includefiles, vmakepkgjson) {
+vmake.release(target, {
+    includefiles: ["json.h"],  // 相对于src的位置
+    version: "1.1.0",
+    repo: "http://119.29.164.225:19901/vmake-repo",
+});
+ */
+vmake.release = function (target, config) {
+    let includefiles = config.includefiles;
+    let version = config.version;
+    let repo = config.repo;
     vmake.rm(".publish");
     vmake.mkdirs(".publish");
     vmake.run("vmake publish", ".publish");
-    vmake.copy(target.target_dir + "/lib" + target.name + ".a", ".publish/lib" + "/lib" + target.name + ".a");
+    vmake.copy(
+        target.target_dir + "/lib" + target.target_name + ".a",
+        ".publish/lib" + "/lib" + target.target_name + ".a"
+    );
     for (const it in includefiles) {
         vmake.copy("src/" + it, ".publish/include/" + it);
     }
+    vmake.copy("src/", ".publish/src", (source) => {
+        if (source.endsWith(".cpp")) {
+            return true;
+        }
+        return false;
+    });
     const fs = require("fs");
-    fs.writeFileSync(".publish/vmakepkg.json", JSON.stringify(vmakepkgjson, null, 4));
+    fs.writeFileSync(
+        ".publish/vmakepkg.json",
+        JSON.stringify(
+            {
+                name: target.target_name,
+                version: version,
+                repo: repo,
+            },
+            null,
+            4
+        )
+    );
     vmake.run("vmake publish", ".publish");
     vmake.rm(".publish");
 };

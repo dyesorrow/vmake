@@ -38,6 +38,9 @@ vmake.md5sum = function (file) {
 
 vmake.copy = function (source, dest, filter) {
     function do_copy(fsource, fdest) {
+        if (!fs.existsSync(fsource)) {
+            return;
+        }
         let stat = fs.statSync(fsource);
         if (stat.isDirectory()) {
             if (!fs.existsSync(fdest)) {
