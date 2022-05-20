@@ -211,11 +211,11 @@ async function vscode_cpp_properties(config) {
 
     let configurations = {
         configurations: [{
-            name: "Win32",
+            name: "GCC",
             includePath: config.includes,
             defines: config.defines,
-            cStandard: "gnu17",
-            cppStandard: "gnu++17",
+            cStandard: "c17",
+            cppStandard: "c++17",
             intelliSenseMode: "linux-gcc-x64"
         }],
         version: 4,
