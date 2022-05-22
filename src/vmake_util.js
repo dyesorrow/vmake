@@ -108,6 +108,10 @@ vmake.release(target, {
         process.exit(1);
     }
 
+    if(!config.sourcefiles){
+        vmake.info("no source files will be copy.");
+    }
+
     let includefiles = config.includefiles;
     let sourcefiles = config.sourcefiles || [];
     let version = config.version;
@@ -122,6 +126,7 @@ vmake.release(target, {
     vmake.copy("src/", ".publish/include", (source) => {
         for (const it of includefiles) {
             if(vmake.wildcard_test(it, source)){
+                vmake.info("[include copy]: %s", source);
                 return true;
             }
         }
@@ -132,6 +137,7 @@ vmake.release(target, {
     vmake.copy("src/", ".publish/src", (source) => {
         for (const it of sourcefiles) {
             if(vmake.wildcard_test(it, source)){
+                vmake.info("[source  copy]: %s", source);
                 return true;
             }
         }
