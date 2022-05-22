@@ -62,6 +62,30 @@ vmake.process_bar = function (info, piece) {
     return bar;
 };
 
+
+vmake.wildcard_test = function (wildcard_str, source_str) {
+    // https://leetcode.cn/problems/wildcard-matching/solution/js-dong-tai-gui-hua-yu-hui-su-by-jsyt/
+    let s = source_str;
+    let p = wildcard_str;
+    if (p === "*" || s === p) return true;
+    let dp = Array.from(Array(s.length + 1), _ => Array(p.length + 1).fill(false));
+    dp[0][0] = true;
+    for (let i = 1; i <= p.length; i++) {
+        if (!dp[0][i - 1]) break;
+        if (p[i - 1] === '*') dp[0][i] = true;
+    }
+    for (let i = 1; i <= s.length; i++) {
+        for (let j = 1; j <= p.length; j++) {
+            if (s[i - 1] === p[j - 1] || p[j - 1] === "?") {
+                dp[i][j] = dp[i - 1][j - 1];
+            } else if (p[j - 1] === "*") {
+                dp[i][j] = dp[i - 1][j] || dp[i][j - 1];
+            }
+        }
+    }
+    return dp[s.length][p.length];
+};
+
 vmake.release = function (target, config) {
     if (!target || target.target_type != "static") {
         vmake.error("function vmake.release only support static target build");
@@ -71,7 +95,12 @@ vmake.release = function (target, config) {
         vmake.error("function vmake.release use error. right example: %s", `
 
 vmake.release(target, {
-    includefiles: ["json.h"],  // location relative to src directory
+    includefiles: [
+        "src/json.h"
+    ],
+    sourcefiles: [
+        "src/*.cpp"
+    ],
     version: "1.1.0",
     repo: "http://127.0.0.1:19901/vmake-repo",
 });
@@ -80,21 +109,35 @@ vmake.release(target, {
     }
 
     let includefiles = config.includefiles;
+    let sourcefiles = config.sourcefiles || [];
     let version = config.version;
     let repo = config.repo;
+
     vmake.rm(".publish");
     vmake.mkdirs(".publish");
     vmake.run("vmake publish", ".publish");
     vmake.copy(target.target_dir + "/lib" + target.target_name + ".a", ".publish/lib" + "/lib" + target.target_name + ".a");
-    for (const it of includefiles) {
-        vmake.copy("src/" + it, ".publish/include/" + it);
-    }
-    vmake.copy("src/", ".publish/src", (source) => {
-        if (source.endsWith(".cpp")) {
-            return true;
+
+    // 拷贝头文件
+    vmake.copy("src/", ".publish/include", (source) => {
+        for (const it of includefiles) {
+            if(vmake.wildcard_test(it, source)){
+                return true;
+            }
         }
         return false;
     });
+
+    // 拷贝源代码
+    vmake.copy("src/", ".publish/src", (source) => {
+        for (const it of sourcefiles) {
+            if(vmake.wildcard_test(it, source)){
+                return true;
+            }
+        }
+        return false;
+    });
+
     const fs = require("fs");
     fs.writeFileSync(".publish/vmakepkg.json", JSON.stringify({
         name: target.target_name,

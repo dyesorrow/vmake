@@ -47,6 +47,9 @@ vmake.copy = function (source, dest, filter) {
             if (!fs.existsSync(fdest)) {
                 fs.mkdirSync(fdest);
             }
+            if (fsource.endsWith("/")) {
+                fsource = fsource.substring(0, fsource.length - 1);
+            }
             for (const it of fs.readdirSync(fsource)) {
                 do_copy(fsource + "/" + it, fdest + "/" + it);
             }
