@@ -50,6 +50,10 @@ vmake.get_content = function (uri) {
 
 vmake.wget = function (src, dist, option) {
     return new Promise((resolve, reject) => {
+        let dir = Path.dirname(dist);
+        if(!fs.existsSync(dir)){
+            vmake.mkdirs(dir);
+        }
         let download = wget.download(src, dist, option);
         let process_bar = vmake.process_bar(src + ": ");
         download.on('error', function (err) {

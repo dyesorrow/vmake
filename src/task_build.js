@@ -394,6 +394,14 @@ vmake.build = function (target_name, target_type) {
                 vmake.copy(target.target_dir, target_config.outdir);
             }
             vmake.success("[100%] build end! time cost: %s", time_format(Date.now() - start_time));
+        },
+        require: async (url, force) => {
+            let name = url.substring(url.lastIndexOf("/") + 1);
+            let dist_path = build_dir + "/script/" + name;
+            if (!fs.existsSync(dist_path) || force) {
+                await vmake.download(url, dist_path);
+            }
+            return require(path.join(process.cwd(), dist_path));
         }
     };
     return target;
