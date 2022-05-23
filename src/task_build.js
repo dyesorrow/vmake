@@ -238,15 +238,14 @@ async function target_link(target) {
     for (const it of target_config.link) {
         links.push("-l" + it);
     }
-    target_config.ldflags = links.concat(target_config.ldflags);
 
     if (target_type == "bin") {
         // 链接
-        let command = `g++ ${build_dir}/obj/*.o ` + target_config.objs.join(" ");
+        let command = `g++ ${target_config.ldflags.join(" ")} ${build_dir}/obj/*.o ` + target_config.objs.join(" ");
         for (const lib of target_config.libdirs) {
             command += " -L " + lib;
         }
-        command += " -o " + target_dir + "/" + target_name + " " + target_config.ldflags.join(" ");
+        command += " -o " + target_dir + "/" + target_name + " -Wl,--start-group " + links.join(" ") +" -Wl,--end-group";
         try {
             vmake.info("[%3d%] %s", 99, command);
             vmake.run(command);

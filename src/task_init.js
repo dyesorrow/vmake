@@ -25,7 +25,8 @@ vmake.task.build = async function () {
     target.add_files("src/*.cpp");
     // target.add_objs("res/icon/icon.o");
 
-    target.add_ldflag("-static -lpthread");
+    target.add_ldflag("-static");
+    target.add_link("pthread");
 
     target.set_outdir("./dest");
 
