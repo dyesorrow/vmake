@@ -57,12 +57,18 @@ async function handle_pkg(target, pkg) {
     }
 
     if (!await check_file()) {
-        vmake.rm(pkg_dir);
-        await vmake.download(remote_pre + ".zip", local_zip);
-        const unzip = new adm_zip(local_zip);
-        vmake.mkdirs(pkg_dir);
-        unzip.extractAllTo(pkg_dir);
-        fs.rmSync(local_zip);
+        let url = remote_pre + ".zip";
+        try {
+            vmake.rm(pkg_dir);
+            await vmake.download(url, local_zip);
+            const unzip = new adm_zip(local_zip);
+            vmake.mkdirs(pkg_dir);
+            unzip.extractAllTo(pkg_dir);
+            fs.rmSync(local_zip);
+        } catch (error) {
+            vmake.error("handle package error, url=%s, error: %s", url, error);
+            process.exit(-1);
+        }
     }
 
     target.add_include(include_dir);
@@ -99,7 +105,7 @@ async function target_complie(target) {
             await handle_pkg(target, pkg);
         } catch (error) {
             vmake.error("%s", error);
-            process.exit();
+            process.exit(-1);
         }
     }
 
@@ -200,7 +206,7 @@ async function target_complie(target) {
             vmake.run(command);
         } catch (error) {
             vmake.error("%s", error);
-            process.exit();
+            process.exit(-1);
         }
     }
 
@@ -245,13 +251,13 @@ async function target_link(target) {
         for (const lib of target_config.libdirs) {
             command += " -L " + lib;
         }
-        command += " -o " + target_dir + "/" + target_name + " -Wl,--start-group " + links.join(" ") +" -Wl,--end-group";
+        command += " -o " + target_dir + "/" + target_name + " -Wl,--start-group " + links.join(" ") + " -Wl,--end-group";
         try {
             vmake.info("[%3d%] %s", 99, command);
             vmake.run(command);
         } catch (error) {
             vmake.error("%s", error);
-            process.exit();
+            process.exit(-1);
         }
         return;
     }
@@ -264,7 +270,7 @@ async function target_link(target) {
             vmake.run(command);
         } catch (error) {
             vmake.error("%s", error);
-            process.exit();
+            process.exit(-1);
         }
         return;
     }
@@ -286,12 +292,12 @@ async function target_link(target) {
             vmake.run(command);
         } catch (error) {
             vmake.error("%s", error);
-            process.exit();
+            process.exit(-1);
         }
         return;
     }
     vmake.error("Not support target [%s], please choose from the following: bin, static, shared", target_type);
-    process.exit();
+    process.exit(-1);
 }
 
 function time_format(time) {
@@ -387,7 +393,7 @@ vmake.build = function (target_name, target_type) {
                 await vscode_cpp_properties(target_config);
             } catch (error) {
                 vmake.error("%s", error);
-                process.exit();
+                process.exit(-1);
             }
             if (target_config.outdir) {
                 vmake.copy(target.target_dir, target_config.outdir);

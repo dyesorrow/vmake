@@ -20,7 +20,7 @@ vmake.upload = async function (local, remote) {
         });
     } catch (error) {
         console.log(error);
-        process.exit(1);
+        process.exit(-1);
     }
 };
 
@@ -58,8 +58,7 @@ vmake.wget = function (src, dist, option) {
         let process_bar = vmake.process_bar(src + ": ");
         download.on('error', function (err) {
             process_bar.end();
-            console.log(err);
-            reject();
+            reject(err);
         });
         download.on('start', function (fileSize) {
             process_bar.start();

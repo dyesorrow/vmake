@@ -105,7 +105,7 @@ vmake.release(target, {
     repo: "http://127.0.0.1:19901/vmake-repo",
 });
         `);
-        process.exit(1);
+        process.exit(-1);
     }
 
     if(!config.sourcefiles){
