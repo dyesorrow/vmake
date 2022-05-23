@@ -39,7 +39,7 @@ async function handle_pkg(target, pkg) {
                 let computed_md5 = vmake.md5sum(file);
                 if (computed_md5 != md5_data[it]) {
                     changed = true;
-                    msg = `file not name: local=${computed_md5}, expect=${md5_data[it]}`;
+                    msg = `file not same: local=${computed_md5}, expect=${md5_data[it]}`;
                     break;
                 }
             }
