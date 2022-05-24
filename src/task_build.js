@@ -200,7 +200,8 @@ async function target_complie(target) {
             command += " -I " + inc;
         }
         command += " " + source + ` -o ${build_dir}/obj/` + objname;
-        vmake.info("[%3d%] %s -> %s", 12 + Math.floor(85 / Object.keys(obj_list).length * (++obj_i)), source, command);
+        vmake.info("[%3d%] compile %s", 12 + Math.floor(85 / Object.keys(obj_list).length * (++obj_i)), source);
+        console.log(command);
 
         try {
             vmake.run(command);
@@ -253,7 +254,8 @@ async function target_link(target) {
         }
         command += " -o " + target_dir + "/" + target_name + " -Wl,--start-group " + links.join(" ") + " -Wl,--end-group";
         try {
-            vmake.info("[%3d%] %s", 99, command);
+            vmake.info("[%3d%] %s", 99, "link bin result: " + target_dir + "/" + target_name);
+            console.log(command);
             vmake.run(command);
         } catch (error) {
             vmake.error("%s", error);
@@ -266,7 +268,8 @@ async function target_link(target) {
         // 静态链接库
         let command = `ar rcs ${target_dir + "/lib" + target_name}.a ${build_dir}/obj/*.o ` + target_config.objs.join(" ");
         try {
-            vmake.info("[%3d%] %s", 99, command);
+            vmake.info("[%3d%] %s", 99, "link static result: " + `${target_dir + "/lib" + target_name}.a`);
+            console.log(command);
             vmake.run(command);
         } catch (error) {
             vmake.error("%s", error);
@@ -288,7 +291,8 @@ async function target_link(target) {
             command += " -o " + target_dir + "/lib" + target_name + ".so " + target_config.ldflags.join(" ");
         }
         try {
-            vmake.info("[%3d%] %s", 99, command);
+            vmake.info("[%3d%] %s", 99, "link shared result: " + target_dir + "/lib" + target_name + ".so ");
+            console.log(command);
             vmake.run(command);
         } catch (error) {
             vmake.error("%s", error);
