@@ -97,6 +97,7 @@ async function handle_pkg(target, pkg) {
 async function target_complie(target) {
     let build_dir = target.build_dir;
     let target_config = target.get_config();
+    const obj_dir = build_dir + "/obj";
 
     for (let i = 0; i < target_config.packages.length; i++) {
         const pkg = target_config.packages[i];
@@ -109,7 +110,7 @@ async function target_complie(target) {
         }
     }
 
-    vmake.mkdirs(build_dir + "/obj");
+    vmake.mkdirs(obj_dir);
 
     let obj_list = {};
     for (const files of target_config.files) {
@@ -121,12 +122,12 @@ async function target_complie(target) {
             command += " -D" + def;
         }
         command += " " + files;
-        command += " > " + build_dir + "/obj/tmp.d";
+        command += " > " + obj_dir + "/tmp.d";
 
         vmake.debug("%s", command);
         vmake.run(command);
 
-        let result = fs.readFileSync(build_dir + "/obj/tmp.d").toString();
+        let result = fs.readFileSync(obj_dir + "/tmp.d").toString();
         result = result.replaceAll(/\\\r?\n/g, " ");
         vmake.debug("==>> ", result);
 
@@ -147,50 +148,59 @@ async function target_complie(target) {
         }
     }
     vmake.debug("%s", obj_list);
-    let raw_obj_list = obj_list;
-
 
     function get_obj_name(cpp_name) {
         return cpp_name.replaceAll("/", "_").replaceAll(".", "_").replaceAll("\\", "_") + ".o";
     }
 
+
+    let change_list = {};
     try {
-        let content = fs.readFileSync(build_dir + "/obj/info.txt");
-        let last = JSON.parse(content);
-        let change = {};
-        for (const tar in last) {
-            if (!obj_list[tar]) {
+        let old_obj_list = JSON.parse(fs.readFileSync(obj_dir + "/info.txt"));
+        for (const source in old_obj_list) {
+            let objname = get_obj_name(source);
+            let objpath = obj_dir + "/" + objname;
+
+            // 检查文件是否删除
+            if (!obj_list[source]) {
                 // 文件删除
-                let objpath = build_dir + "/obj/" + get_obj_name(tar);
                 if (fs.existsSync(objpath)) {
-                    fs.rmSync(build_dir + "/obj/" + objname);
+                    fs.rmSync(objpath);
                 }
                 continue;
             }
-            for (const file in last[tar]) {
-                if (!obj_list[tar][file] || obj_list[tar][file] != last[tar][file]) {
-                    // 发生变化
-                    vmake.debug("%s %s %s %s", "chaneg", tar, file, change[tar]);
-                    change[tar] = obj_list[tar];
+            // 检查依赖文件是否发生变化
+            for (const file in old_obj_list[source]) {
+                if (!obj_list[source][file] || obj_list[source][file] != old_obj_list[source][file]) {
+                    vmake.debug("%s %s %s %s", "chaneg", source, file, change_list[source]);
+                    change_list[source] = obj_list[source];
                     break;
                 }
             }
         }
-        for (const tar in obj_list) {
-            if (!last[tar]) {
-                // 文件新增，删除对应的obj文件
-                change[tar] = obj_list[tar];
-                vmake.debug("%s %s", "add", change[tar]);
+        for (const source in obj_list) {
+            let objname = get_obj_name(source);
+            let objpath = obj_dir + "/" + objname;
+
+            // 文件新增，删除对应的obj文件
+            if (!old_obj_list[source]) {
+                change_list[source] = obj_list[source];
+                vmake.debug("%s %s", "add", change_list[source]);
                 continue;
             }
+
+            // 目标obj不存在
+            if (!fs.existsSync(objpath)) {
+                change_list[source] = obj_list[source];
+            }
         }
-        obj_list = change;
-        vmake.debug("%s", obj_list);
+
+        vmake.debug("%s", change_list);
     } catch (error) {
     }
 
     let obj_i = 0;
-    for (const source in obj_list) {
+    for (const source in change_list) {
         let objname = get_obj_name(source);
         let command = "g++ -c " + target_config.cxxflags.join(" ");
         for (const def of target_config.defines) {
@@ -199,8 +209,8 @@ async function target_complie(target) {
         for (const inc of target_config.includes) {
             command += " -I " + inc;
         }
-        command += " " + source + ` -o ${build_dir}/obj/` + objname;
-        vmake.info("[%3d%] compile %s", 12 + Math.floor(85 / Object.keys(obj_list).length * (++obj_i)), source);
+        command += " " + source + ` -o ${obj_dir}/` + objname;
+        vmake.info("[%3d%] compile %s", 12 + Math.floor(85 / Object.keys(change_list).length * (++obj_i)), source);
         console.log(command);
 
         try {
@@ -211,7 +221,24 @@ async function target_complie(target) {
         }
     }
 
-    fs.writeFileSync(build_dir + "/obj/info.txt", JSON.stringify(raw_obj_list, null, 4));
+    function remove_old_obj(obj_dir) {
+        let obj_result_map = {};
+        for (const source in obj_list) {
+            let objname = get_obj_name(source);
+            obj_result_map[objname] = true;
+        }
+        let file_exits = fs.readdirSync(obj_dir);
+        for (const it of file_exits) {
+            if (it.endsWith(".o") && !obj_result_map[it]) {
+                console.log(`delete not need obj: ${obj_dir}/${it}`);
+                vmake.rm(`${obj_dir}/${it}`);
+            }
+        }
+    }
+    remove_old_obj(obj_dir);
+
+
+    fs.writeFileSync(obj_dir + "/info.txt", JSON.stringify(obj_list, null, 4));
 }
 
 async function vscode_cpp_properties(config) {
