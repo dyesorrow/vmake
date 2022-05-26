@@ -64,6 +64,12 @@ async function handle_dependencies_pkg(target, pkg) {
             const unzip = new adm_zip(local_zip);
             vmake.mkdirs(pkg_dir);
             unzip.extractAllTo(pkg_dir);
+
+            if(!pkg.md5){
+                pkg.md5 = {};
+                pkg.md5[".publish/dest.zip"] = vmake.md5sum(local_zip);
+            }
+
             fs.rmSync(local_zip);
         } catch (error) {
             vmake.error("handle package error, url=%s, error: %s", url, error);
@@ -108,7 +114,7 @@ async function handle_dependencies(target) {
             vmake.info("[%3d%] %s", Math.floor(10 / target_config.packages.length * (i + 1)), `resolve dependencies: ${pkg.name}`);
             await handle_dependencies_pkg(target, pkg);
             pkg_info[pkg.name] = {
-                repo: pkg.pkg,
+                repo: pkg.repo,
                 version: pkg.version,
                 md5: pkg.md5,
             };
@@ -213,25 +219,28 @@ async function handle_obj_list_get(target, obj_list, change_list) {
     vmake.debug("%s", obj_list);
 
     try {
-        let old_obj_list = JSON.parse(fs.readFileSync(obj_dir + "/info.txt"));
-        for (const source in old_obj_list) {
-            let objname = get_obj_name(source);
-            let objpath = obj_dir + "/" + objname;
+        let old_obj_list = {};
+        if (fs.existsSync(obj_dir + "/info.txt")) {
+            old_obj_list = JSON.parse(fs.readFileSync(obj_dir + "/info.txt"));
+            for (const source in old_obj_list) {
+                let objname = get_obj_name(source);
+                let objpath = obj_dir + "/" + objname;
 
-            // 检查文件是否删除
-            if (!obj_list[source]) {
-                // 文件删除
-                if (fs.existsSync(objpath)) {
-                    fs.rmSync(objpath);
+                // 检查文件是否删除
+                if (!obj_list[source]) {
+                    // 文件删除
+                    if (fs.existsSync(objpath)) {
+                        fs.rmSync(objpath);
+                    }
+                    continue;
                 }
-                continue;
-            }
-            // 检查依赖文件是否发生变化
-            for (const file in old_obj_list[source]) {
-                if (!obj_list[source][file] || obj_list[source][file] != old_obj_list[source][file]) {
-                    vmake.debug("%s %s %s %s", "chaneg", source, file, change_list[source]);
-                    change_list[source] = obj_list[source];
-                    break;
+                // 检查依赖文件是否发生变化
+                for (const file in old_obj_list[source]) {
+                    if (!obj_list[source][file] || obj_list[source][file] != old_obj_list[source][file]) {
+                        vmake.debug("%s %s %s %s", "chaneg", source, file, change_list[source]);
+                        change_list[source] = obj_list[source];
+                        break;
+                    }
                 }
             }
         }
@@ -239,16 +248,17 @@ async function handle_obj_list_get(target, obj_list, change_list) {
             let objname = get_obj_name(source);
             let objpath = obj_dir + "/" + objname;
 
+            // 目标obj不存在
+            if (!fs.existsSync(objpath)) {
+                change_list[source] = obj_list[source];
+                continue;
+            }
+
             // 文件新增，删除对应的obj文件
             if (!old_obj_list[source]) {
                 change_list[source] = obj_list[source];
                 vmake.debug("%s %s", "add", change_list[source]);
                 continue;
-            }
-
-            // 目标obj不存在
-            if (!fs.existsSync(objpath)) {
-                change_list[source] = obj_list[source];
             }
         }
 
@@ -304,7 +314,7 @@ function handle_remove_old_obj(target, obj_list) {
 async function target_complie(target) {
     const obj_dir = target.build_dir + "/obj";
     vmake.mkdirs(obj_dir);
-    
+
     let obj_list = {};
     let change_list = {};
     await handle_dependencies(target);
