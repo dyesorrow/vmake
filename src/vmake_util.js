@@ -108,7 +108,7 @@ vmake.release(target, {
         process.exit(-1);
     }
 
-    if(!config.sourcefiles){
+    if (!config.sourcefiles) {
         vmake.info("no source files will be copy.");
     }
 
@@ -121,11 +121,12 @@ vmake.release(target, {
     vmake.mkdirs(".publish");
     vmake.run("vmake publish", ".publish");
     vmake.copy(target.target_dir + "/lib" + target.target_name + ".a", ".publish/lib" + "/lib" + target.target_name + ".a");
+    vmake.copy(target.build_dir + "/lib/dependencies.json", ".publish/dependencies.json");
 
     // 拷贝头文件
     vmake.copy("src/", ".publish/include", (source) => {
         for (const it of includefiles) {
-            if(vmake.wildcard_test(it, source)){
+            if (vmake.wildcard_test(it, source)) {
                 vmake.info("[include copy]: %s", source);
                 return true;
             }
@@ -136,7 +137,7 @@ vmake.release(target, {
     // 拷贝源代码
     vmake.copy("src/", ".publish/src", (source) => {
         for (const it of sourcefiles) {
-            if(vmake.wildcard_test(it, source)){
+            if (vmake.wildcard_test(it, source)) {
                 vmake.info("[source  copy]: %s", source);
                 return true;
             }

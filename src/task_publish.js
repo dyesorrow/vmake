@@ -74,11 +74,8 @@ vmake.task.publish = async function () {
         try {
             fs.rmSync(".publish/dest.zip");
             fs.rmSync(".publish/md5.txt");
-            fs.rmSync(".publish/files.md5");
         } catch (error) {
         }
-
-        fs.writeFileSync(".publish/files.md5", JSON.stringify(dir_md5("lib", "include", "bin", "src"), null, 4));
 
         const zip = new adm_zip();
         zip.addLocalFolder("lib", "lib");
@@ -86,9 +83,11 @@ vmake.task.publish = async function () {
         zip.addLocalFolder("src", "src");
         zip.addLocalFolder("bin", "bin");
         zip.addLocalFile("readme.md");
+        if (fs.existsSync("dependencies.json")) {
+            zip.addLocalFile("dependencies.json");
+        }
         zip.writeZip(".publish/dest.zip");
-
-        fs.writeFileSync(".publish/md5.txt", JSON.stringify(dir_md5("lib", "include", "bin", ".publish/dest.zip"), null, 4));
+        fs.writeFileSync(".publish/md5.txt", JSON.stringify(dir_md5("lib", "include", "bin", "src", "dependencies.json", ".publish/dest.zip"), null, 4));
 
         let pre = `${config.repo}/${config.name}/${os.platform()}-${config.version}`;
         vmake.info("[50%] upload >>> %s", pre);

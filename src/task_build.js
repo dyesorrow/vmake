@@ -23,6 +23,8 @@ async function handle_pkg(target, pkg) {
             // 优先使用远程的md5文件
             let remote_md5 = await vmake.get_content(remote_pre + ".md5");
             let md5_data = JSON.parse(remote_md5);
+            pkg.md5 = md5_data; // 取出md5文件
+
             let changed = false;
             let msg = "";
             for (const it in md5_data) {
@@ -39,7 +41,7 @@ async function handle_pkg(target, pkg) {
                 let computed_md5 = vmake.md5sum(file);
                 if (computed_md5 != md5_data[it]) {
                     changed = true;
-                    msg = `file not same: local=${computed_md5}, expect=${md5_data[it]}`;
+                    msg = `file not same: local md5 ${computed_md5}, expect md5 ${md5_data[it]}, ${file}`;
                     break;
                 }
             }
@@ -47,13 +49,11 @@ async function handle_pkg(target, pkg) {
                 vmake.warn("%s: remote package have changed, will download newest. %s", pkg.name, msg);
                 return false;
             }
-
-            return true;
         } catch (error) {
             // 如果远程的md5文件无法使用，则只判断文件夹是否存在
             vmake.warn("%s: %s. will ignore the check for this dependency", pkg.name, error);
-            return true;
         }
+        return true;
     }
 
     if (!await check_file()) {
@@ -79,6 +79,7 @@ async function handle_pkg(target, pkg) {
     // 复制资源文件到bin目录
     if (fs.existsSync(bin_dir)) {
         vmake.debug("check bin dir");
+        // todo copy 改成公共函数。这个有点问题
         for (const it of fs.readdirSync(bin_dir)) {
             vmake.debug("copy %s to %s", it, build_dir + "/dest/" + it);
             fs.cpSync(bin_dir + "/" + it, build_dir + "/dest/" + it, {
@@ -92,25 +93,90 @@ async function handle_pkg(target, pkg) {
             target.add_link(pkg.name);
         }
     }
+    // 如果有依赖的信息，则会进行依赖的信息校验
+    if (fs.existsSync(pkg_dir + "/dependencies.json")) {
+        pkg.dependency_info = JSON.parse(fs.readFileSync(pkg_dir + "/dependencies.json").toString());
+    }
 }
 
 async function target_complie(target) {
     let build_dir = target.build_dir;
     let target_config = target.get_config();
 
+    if (!fs.existsSync(build_dir + "/lib")) {
+        vmake.mkdirs(build_dir + "/lib");
+    }
+
+    let pkg_info = {};
     for (let i = 0; i < target_config.packages.length; i++) {
-        const pkg = target_config.packages[i];
+        let pkg = target_config.packages[i];
         try {
             vmake.info("[%3d%] %s", Math.floor(10 / target_config.packages.length * (i + 1)), `resolve dependencies: ${pkg.name}`);
             await handle_pkg(target, pkg);
+            pkg_info[pkg.name] = {
+                repo: pkg.pkg,
+                version: pkg.version,
+                md5: pkg.md5,
+            };
         } catch (error) {
             vmake.error("%s", error);
             process.exit(-1);
         }
     }
+    fs.writeFileSync(build_dir + "/lib/dependencies.json", JSON.stringify(pkg_info, null, 4));
+
+    console.log(target_config.packages);
+
+    // 检查依赖信息是否正确
+    let dependencies_log_info = [];
+    for (let i = 0; i < target_config.packages.length; i++) {
+        const pkg = target_config.packages[i];
+        if (pkg.dependency_info) {
+            for (const dpkg_name in pkg.dependency_info) {
+                const dpkg = pkg.dependency_info[dpkg_name];
+                if (!pkg_info[dpkg_name]) {
+                    dependencies_log_info.push({
+                        "level": "error",
+                        "msg": `dependency lose. ${pkg.name} need ${dpkg_name}:${dpkg.version}`
+                    });
+                    continue;
+                }
+                if (pkg_info[dpkg_name].version != dpkg.version) {
+                    dependencies_log_info.push({
+                        "level": "warn",
+                        "msg": `version not same. ${pkg.name} need ${dpkg_name}:${dpkg.version}`
+                    });
+                    continue;
+                }
+                if (pkg_info[dpkg_name].md5[".publish/dest.zip"] != dpkg.md5[".publish/dest.zip"]) {
+                    dependencies_log_info.push({
+                        "level": "warn",
+                        "msg": `build result not same. ${pkg.name} need ${dpkg_name}:${dpkg.version}:${dpkg.md5[".publish/dest.zip"]}. while this vmake config is: ${dpkg_name}:${dpkg.version}:${pkg_info[dpkg_name].md5[".publish/dest.zip"]}`
+                    });
+                    continue;
+                }
+            }
+        } else {
+            vmake.debug("not dependency_info for pkg %s, will ignore", pkg.name);
+        }
+    }
+
+    let has_error = false;
+    for (const it of dependencies_log_info) {
+        if (it.level == "warn") {
+            vmake.warn("%s", it.msg);
+        }
+        if (it.level == "error") {
+            has_error = true;
+            vmake.error("%s", it.msg);
+        }
+    }
+
+    if (has_error) {
+        process.exit(-1);
+    }
 
     vmake.mkdirs(build_dir + "/obj");
-
     let obj_list = {};
     for (const files of target_config.files) {
         let command = "g++ -MM";
@@ -128,13 +194,10 @@ async function target_complie(target) {
 
         let result = fs.readFileSync(build_dir + "/obj/tmp.d").toString();
         result = result.replaceAll(/\\\r?\n/g, " ");
-        vmake.debug("==>> ", result);
-
         let reg = /(.+?): (.+)/g;
         let rst = reg.exec(result);
         while (rst) {
             let depends = rst[2].trim().split(" ");
-            vmake.debug("rst=%s, depends = %s", rst, depends);
             obj_list[depends[0]] = {};
             for (let dep of depends) {
                 dep = dep.trim();
