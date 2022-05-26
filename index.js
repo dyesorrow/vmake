@@ -11,6 +11,7 @@ require("./src/vmake_util.js");
 
 require("./src/task_build.js");
 require("./src/task_help.js");
+require("./src/task_example.js");
 require("./src/task_init.js");
 require("./src/task_publish.js");
 require("./src/task_update.js");
@@ -47,7 +48,8 @@ function run() {
                 "help": true,
                 "publish": true,
                 "init": true,
-                "update": true
+                "update": true,
+                "example": true,
             };
             let find = false;
             for (const key in vmake.task) {
