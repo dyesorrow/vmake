@@ -7,7 +7,7 @@ vmake.task.init = function () {
     fs.writeFileSync("vmake.js", `// more help: https://github.com/dyesorrow/vmake
 
 vmake.task.build = async function () {
-    let target = vmake.build("app", "bin");
+    let target = vmake.cpp("app", "bin");
 
     target.add_cxxflag("-g");
     target.add_cxxflag("-std=c++17");

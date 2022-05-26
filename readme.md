@@ -30,7 +30,7 @@ npm install -g .
 ## vmake.js
 ```js
 vmake.task.build = async function () {
-    let target = vmake.build("app", "bin");
+    let target = vmake.cpp("app", "bin");
 
     target.add_cxxflag("-g");
     target.add_cxxflag("-std=c++17");

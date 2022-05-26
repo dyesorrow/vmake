@@ -3,7 +3,7 @@ const path = require('path');
 const os = require('os');
 const adm_zip = require("adm-zip");
 
-async function handle_pkg(target, pkg) {
+async function handle_dependencies_pkg(target, pkg) {
     let build_dir = target.build_dir;
 
     let remote_pre = pkg.repo + "/" + pkg.name + "/" + os.platform() + "-" + pkg.version;
@@ -14,7 +14,7 @@ async function handle_pkg(target, pkg) {
     let lib_dir = pkg_dir + "/lib";
     let bin_dir = pkg_dir + "/bin";
 
-    async function check_file() {
+    async function check_pkg() {
         if (!fs.existsSync(pkg_dir)) {
             return false;
         }
@@ -56,7 +56,7 @@ async function handle_pkg(target, pkg) {
         return true;
     }
 
-    if (!await check_file()) {
+    async function download_remote_pkg() {
         let url = remote_pre + ".zip";
         try {
             vmake.rm(pkg_dir);
@@ -71,21 +71,22 @@ async function handle_pkg(target, pkg) {
         }
     }
 
+    if (!await check_pkg()) {
+        await download_remote_pkg();
+    }
+
     target.add_include(include_dir);
     target.add_libdir(lib_dir);
-    vmake.debug("add include dir: ", include_dir);
-    vmake.debug("add lib dir: ", lib_dir);
-
-    // 复制资源文件到bin目录
-    if (fs.existsSync(bin_dir)) {
-        vmake.debug("copy bin dir");
-        vmake.copy(bin_dir, build_dir + "/dest/");
-    }
     if (fs.existsSync(lib_dir)) {
         if (fs.readdirSync(lib_dir).length > 0) {
             vmake.debug("add link " + pkg.name);
             target.add_link(pkg.name);
         }
+    }
+    // 复制资源文件到bin目录
+    if (fs.existsSync(bin_dir)) {
+        vmake.debug("copy bin dir");
+        vmake.copy(bin_dir, build_dir + "/dest/");
     }
     // 如果有依赖的信息，则会进行依赖的信息校验
     if (fs.existsSync(pkg_dir + "/dependencies.json")) {
@@ -93,21 +94,19 @@ async function handle_pkg(target, pkg) {
     }
 }
 
-async function target_complie(target) {
+async function handle_dependencies(target) {
     let build_dir = target.build_dir;
     let target_config = target.get_config();
-    const obj_dir = build_dir + "/obj";
 
     if (!fs.existsSync(build_dir + "/lib")) {
         vmake.mkdirs(build_dir + "/lib");
     }
-
     let pkg_info = {};
     for (let i = 0; i < target_config.packages.length; i++) {
         let pkg = target_config.packages[i];
         try {
             vmake.info("[%3d%] %s", Math.floor(10 / target_config.packages.length * (i + 1)), `resolve dependencies: ${pkg.name}`);
-            await handle_pkg(target, pkg);
+            await handle_dependencies_pkg(target, pkg);
             pkg_info[pkg.name] = {
                 repo: pkg.pkg,
                 version: pkg.version,
@@ -119,8 +118,6 @@ async function target_complie(target) {
         }
     }
     fs.writeFileSync(build_dir + "/lib/dependencies.json", JSON.stringify(pkg_info, null, 4));
-
-    console.log(target_config.packages);
 
     // 检查依赖信息是否正确
     let dependencies_log_info = [];
@@ -170,10 +167,18 @@ async function target_complie(target) {
     if (has_error) {
         process.exit(-1);
     }
+}
 
-    vmake.mkdirs(obj_dir);
+function get_obj_name(cpp_name) {
+    return cpp_name.replaceAll("/", "_").replaceAll(".", "_").replaceAll("\\", "_") + ".o";
+}
 
-    let obj_list = {};
+async function handle_obj_list_get(target, obj_list, change_list) {
+    let build_dir = target.build_dir;
+    let target_config = target.get_config();
+    const obj_dir = build_dir + "/obj";
+
+
     for (const files of target_config.files) {
         let command = "g++ -MM";
         for (const inc of target_config.includes) {
@@ -207,12 +212,6 @@ async function target_complie(target) {
     }
     vmake.debug("%s", obj_list);
 
-    function get_obj_name(cpp_name) {
-        return cpp_name.replaceAll("/", "_").replaceAll(".", "_").replaceAll("\\", "_") + ".o";
-    }
-
-
-    let change_list = {};
     try {
         let old_obj_list = JSON.parse(fs.readFileSync(obj_dir + "/info.txt"));
         for (const source in old_obj_list) {
@@ -253,9 +252,15 @@ async function target_complie(target) {
             }
         }
 
-        vmake.debug("%s", change_list);
     } catch (error) {
     }
+    vmake.debug("%s", obj_list);
+}
+
+
+async function handle_obj_complie(target, change_list) {
+    let target_config = target.get_config();
+    const obj_dir = target.build_dir + "/obj";
 
     let obj_i = 0;
     for (const source in change_list) {
@@ -278,29 +283,38 @@ async function target_complie(target) {
             process.exit(-1);
         }
     }
+}
 
-    function remove_old_obj(obj_dir) {
-        let obj_result_map = {};
-        for (const source in obj_list) {
-            let objname = get_obj_name(source);
-            obj_result_map[objname] = true;
-        }
-        let file_exits = fs.readdirSync(obj_dir);
-        for (const it of file_exits) {
-            if (it.endsWith(".o") && !obj_result_map[it]) {
-                console.log(`delete not need obj: ${obj_dir}/${it}`);
-                vmake.rm(`${obj_dir}/${it}`);
-            }
+function handle_remove_old_obj(target, obj_list) {
+    const obj_dir = target.build_dir + "/obj";
+    let obj_result_map = {};
+    for (const source in obj_list) {
+        let objname = get_obj_name(source);
+        obj_result_map[objname] = true;
+    }
+    let file_exits = fs.readdirSync(obj_dir);
+    for (const it of file_exits) {
+        if (it.endsWith(".o") && !obj_result_map[it]) {
+            console.log(`delete not need obj: ${obj_dir}/${it}`);
+            vmake.rm(`${obj_dir}/${it}`);
         }
     }
-    remove_old_obj(obj_dir);
+}
 
-
+async function target_complie(target) {
+    const obj_dir = target.build_dir + "/obj";
+    vmake.mkdirs(obj_dir);
+    
+    let obj_list = {};
+    let change_list = {};
+    await handle_dependencies(target);
+    await handle_obj_list_get(target, obj_list, change_list);
+    await handle_obj_complie(target, change_list);
+    handle_remove_old_obj(target, obj_list);
     fs.writeFileSync(obj_dir + "/info.txt", JSON.stringify(obj_list, null, 4));
 }
 
 async function vscode_cpp_properties(config) {
-
     let configurations = {
         configurations: [{
             name: "GCC",
@@ -405,7 +419,7 @@ function time_format(time) {
     return result;
 }
 
-vmake.build = function (target_name, target_type) {
+vmake.cpp = function (target_name, target_type) {
     const build_dir = "build/" + target_name + "/" + os.platform();
     vmake.mkdirs(build_dir);
 

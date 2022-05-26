@@ -5,7 +5,7 @@ vmake.js示例:
 const os = require("os");
 
 vmake.task.test = async function () {
-    let target = vmake.build("app", "bin");
+    let target = vmake.cpp("app", "bin");
 
     target.add_cxxflag("-g");
     target.add_cxxflag("-std=c++17");
@@ -28,7 +28,7 @@ vmake.task.test = async function () {
 };
 
 vmake.task.release = async function () {
-    let target = vmake.build("log", "static");
+    let target = vmake.cpp("log", "static");
 
     target.add_cxxflag("-g");
     target.add_cxxflag("-std=c++17");
