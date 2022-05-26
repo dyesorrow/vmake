@@ -8,6 +8,7 @@ global.vmake = {
         "node-fetch": require("node-fetch"),
         "wget-improved": require("wget-improved"),
         "printf": require("printf"),
+        "ejs": require("ejs"),
     },
 };
 
