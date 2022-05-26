@@ -2,24 +2,6 @@ const fs = require('fs');
 const os = require('os');
 const adm_zip = require("adm-zip");
 
-function dir_md5(...dir_list) {
-    let data = {};
-    function dir_md5_impl(dir) {
-        if (fs.statSync(dir).isDirectory()) {
-            for (const it of fs.readdirSync(dir)) {
-                dir_md5_impl(dir + "/" + it);
-            }
-        } else {
-            data[dir] = vmake.md5sum(dir);
-        }
-    }
-    for (const it of dir_list) {
-        dir_md5_impl(it);
-    }
-    return data;
-}
-
-
 vmake.task.publish = async function () {
     vmake.debug("publish");
 
@@ -87,7 +69,7 @@ vmake.task.publish = async function () {
             zip.addLocalFile("dependencies.json");
         }
         zip.writeZip(".publish/dest.zip");
-        fs.writeFileSync(".publish/md5.txt", JSON.stringify(dir_md5("lib", "include", "bin", "src", "dependencies.json", ".publish/dest.zip"), null, 4));
+        fs.writeFileSync(".publish/md5.txt", JSON.stringify(vmake.dir_md5sum("lib", "include", "bin", "src", "dependencies.json", ".publish/dest.zip"), null, 4));
 
         let pre = `${config.repo}/${config.name}/${os.platform()}-${config.version}`;
         vmake.info("[50%] upload >>> %s", pre);

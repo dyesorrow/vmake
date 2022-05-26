@@ -78,14 +78,8 @@ async function handle_pkg(target, pkg) {
 
     // 复制资源文件到bin目录
     if (fs.existsSync(bin_dir)) {
-        vmake.debug("check bin dir");
-        // todo copy 改成公共函数。这个有点问题
-        for (const it of fs.readdirSync(bin_dir)) {
-            vmake.debug("copy %s to %s", it, build_dir + "/dest/" + it);
-            fs.cpSync(bin_dir + "/" + it, build_dir + "/dest/" + it, {
-                force: true
-            });
-        }
+        vmake.debug("copy bin dir");
+        vmake.copy(bin_dir, build_dir + "/dest/");
     }
     if (fs.existsSync(lib_dir)) {
         if (fs.readdirSync(lib_dir).length > 0) {

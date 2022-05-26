@@ -36,6 +36,23 @@ vmake.md5sum = function (file) {
     return md5;
 };
 
+vmake.dir_md5sum = function (...dir_list) {
+    let data = {};
+    function dir_md5_impl(dir) {
+        if (fs.statSync(dir).isDirectory()) {
+            for (const it of fs.readdirSync(dir)) {
+                dir_md5_impl(dir + "/" + it);
+            }
+        } else {
+            data[dir] = vmake.md5sum(dir);
+        }
+    }
+    for (const it of dir_list) {
+        dir_md5_impl(it);
+    }
+    return data;
+};
+
 vmake.copy = function (source, dest, filter) {
     function do_copy(fsource, fdest) {
         if (!fs.existsSync(fsource)) {
