@@ -65,7 +65,7 @@ async function handle_dependencies_pkg(target, pkg) {
             vmake.mkdirs(pkg_dir);
             unzip.extractAllTo(pkg_dir);
 
-            if(!pkg.md5){
+            if (!pkg.md5) {
                 pkg.md5 = {};
                 pkg.md5[".publish/dest.zip"] = vmake.md5sum(local_zip);
             }
@@ -325,10 +325,15 @@ async function target_complie(target) {
 }
 
 async function vscode_cpp_properties(config) {
+    let includes = []
+    for (let it of config.includes) {
+        includes.push("${workspaceFolder}/" + it);
+    }
+
     let configurations = {
         configurations: [{
             name: "GCC",
-            includePath: config.includes,
+            includePath: includes,
             defines: config.defines,
             cStandard: "c17",
             cppStandard: "c++17",
