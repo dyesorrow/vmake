@@ -27,7 +27,7 @@ vmake.run = function (command, cwd) {
 
 vmake.md5sum = function (file) {
     if (!fs.existsSync(file)) {
-        return "notexist";
+        return "not exist";
     }
     const buffer = fs.readFileSync(file);
     const hash = crypto.createHash("md5");
@@ -39,6 +39,10 @@ vmake.md5sum = function (file) {
 vmake.dir_md5sum = function (...dir_list) {
     let data = {};
     function dir_md5_impl(dir) {
+        if (!fs.existsSync(dir)) {
+            data[dir] = vmake.md5sum(dir); // 没有的也给个默认值
+            return;
+        }
         if (fs.statSync(dir).isDirectory()) {
             for (const it of fs.readdirSync(dir)) {
                 dir_md5_impl(dir + "/" + it);
@@ -72,7 +76,7 @@ vmake.copy = function (source, dest, filter) {
             }
         } else {
             if (!fs.existsSync(Path.dirname(fdest))) {
-                fs.mkdirSync(Path.dirname(fdest));
+                vmake.mkdirs(Path.dirname(fdest));
             }
             if (filter && !filter(fsource, fdest)) {
                 return;

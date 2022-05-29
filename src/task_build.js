@@ -67,7 +67,6 @@ async function handle_dependencies_pkg(target, pkg) {
 
             if (!pkg.md5) {
                 pkg.md5 = {};
-                pkg.md5[".publish/dest.zip"] = vmake.md5sum(local_zip);
             }
 
             fs.rmSync(local_zip);
@@ -146,12 +145,14 @@ async function handle_dependencies(target) {
                     });
                     continue;
                 }
-                if (pkg_info[dpkg_name].md5[".publish/dest.zip"] != dpkg.md5[".publish/dest.zip"]) {
-                    dependencies_log_info.push({
-                        "level": "warn",
-                        "msg": `build result not same. ${pkg.name} need ${dpkg_name}:${dpkg.version}:${dpkg.md5[".publish/dest.zip"]}. while this vmake config is: ${dpkg_name}:${dpkg.version}:${pkg_info[dpkg_name].md5[".publish/dest.zip"]}`
-                    });
-                    continue;
+                for (const file_name in dpkg.md5) {
+                    if (pkg_info[dpkg_name].md5[file_name] != dpkg.md5[file_name]) {
+                        dependencies_log_info.push({
+                            "level": "warn",
+                            "msg": `build file not same. ${pkg.name} need ${dpkg_name}:${dpkg.version}:${file_name}:${dpkg.md5[file_name]}. while this vmake config is: ${dpkg_name}:${dpkg.version}:${file_name}:${pkg_info[dpkg_name].md5[file_name]}`
+                        });
+                        continue;
+                    }
                 }
             }
         } else {

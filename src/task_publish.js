@@ -69,7 +69,7 @@ vmake.task.publish = async function () {
             zip.addLocalFile("dependencies.json");
         }
         zip.writeZip(".publish/dest.zip");
-        fs.writeFileSync(".publish/md5.txt", JSON.stringify(vmake.dir_md5sum("lib", "include", "bin", "src", "dependencies.json", ".publish/dest.zip"), null, 4));
+        fs.writeFileSync(".publish/md5.txt", JSON.stringify(vmake.dir_md5sum("lib", "include", "bin", "src", "dependencies.json", "readme.md"), null, 4));
 
         let pre = `${config.repo}/${config.name}/${os.platform()}-${config.version}`;
         vmake.info("[50%] upload >>> %s", pre);
