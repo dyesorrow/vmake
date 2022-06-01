@@ -458,19 +458,21 @@ vmake.cpp = function (target_name, target_type) {
         process_num: 1,
     };
 
-    let process_num = os.cpus().length;
-    process_num = Math.floor(process_num / 2);
-    if (process_num == 0) {
-        process_num = 1;
-    }
-    target_config.process_num = process_num;
-
+    let user_param_process_num_set = false;
     function update_process_num() {
+        let process_num = os.cpus().length;
+        process_num = Math.floor(process_num / 2);
+        if (process_num == 0) {
+            process_num = 1;
+        }
+        target_config.process_num = process_num;
+
         for (let i = 0; i < vmake.args.length; i++) {
             if (vmake.args[i] == "-j") {
                 let reg = /\d+/g;
                 if (vmake.args.length > i + 1 && vmake.args[i + 1].match(reg)) {
                     target_config.process_num = Number.parseInt(vmake.args[i + 1]);
+                    user_param_process_num_set = true;
                     break;
                 } else {
                     vmake.warn("find -j param, but not find num, will ignore")
@@ -480,6 +482,7 @@ vmake.cpp = function (target_name, target_type) {
                 let rst = reg.exec(vmake.args[i]);
                 if (rst) {
                     target_config.process_num = Number.parseInt(rst[1]);
+                    user_param_process_num_set = true;
                     break;
                 }
             }
@@ -498,8 +501,9 @@ vmake.cpp = function (target_name, target_type) {
             target_config.outdir = outdir;
         },
         multi_process(process_num) {
-            target_config.process_num = process_num;
-            update_process_num();
+            if (!user_param_process_num_set) {
+                target_config.process_num = process_num;
+            }
         },
         add_package: (repo, target_map) => {
             for (const key in target_map) {
