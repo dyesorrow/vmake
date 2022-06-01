@@ -1,3 +1,4 @@
+const execAsync = require("child_process").exec
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -162,9 +163,6 @@ async function handle_dependencies(target) {
 
     let has_error = false;
     for (const it of dependencies_log_info) {
-        if (it.level == "warn") {
-            vmake.warn("%s", it.msg);
-        }
         if (it.level == "error") {
             has_error = true;
             vmake.error("%s", it.msg);
@@ -173,6 +171,12 @@ async function handle_dependencies(target) {
 
     if (has_error) {
         process.exit(-1);
+    }
+
+    for (const it of dependencies_log_info) {
+        if (it.level == "warn") {
+            vmake.warn("%s", it.msg);
+        }
     }
 }
 
@@ -268,31 +272,31 @@ async function handle_obj_list_get(target, obj_list, change_list) {
     vmake.debug("%s", obj_list);
 }
 
-
 async function handle_obj_complie(target, change_list) {
     let target_config = target.get_config();
     const obj_dir = target.build_dir + "/obj";
-
-    let obj_i = 0;
+    let change_list_sources = [];
     for (const source in change_list) {
-        let objname = get_obj_name(source);
-        let command = "g++ -c " + target_config.cxxflags.join(" ");
-        for (const def of target_config.defines) {
-            command += " -D" + def;
-        }
-        for (const inc of target_config.includes) {
-            command += " -I " + inc;
-        }
-        command += " " + source + ` -o ${obj_dir}/` + objname;
-        vmake.info("[%3d%] compile %s", 12 + Math.floor(85 / Object.keys(change_list).length * (++obj_i)), source);
-        console.log(command);
+        change_list_sources.push(source);
+    }
 
-        try {
-            vmake.run(command);
-        } catch (error) {
-            vmake.error("%s", error);
-            process.exit(-1);
-        }
+    try {
+        await vmake.run_multi_process(change_list_sources.length, target_config.process_num, (build_at) => {
+            let source = change_list_sources[build_at];
+            let objname = get_obj_name(source);
+            let command = "g++ -fdiagnostics-color -c " + target_config.cxxflags.join(" ");
+            for (const def of target_config.defines) {
+                command += " -D" + def;
+            }
+            for (const inc of target_config.includes) {
+                command += " -I " + inc;
+            }
+            command += " " + source + ` -o ${obj_dir}/` + objname;
+            vmake.info("[%3d%] compile %s", 12 + Math.floor(85 / change_list_sources.length * (build_at + 1)), source);
+            return command;
+        })
+    } catch (error) {
+        process.exit(-1);
     }
 }
 
@@ -451,7 +455,39 @@ vmake.cpp = function (target_name, target_type) {
         before: [],
         after: [],
         objs: [],
+        process_num: 1,
     };
+
+    let process_num = os.cpus().length;
+    process_num = Math.floor(process_num / 2);
+    if (process_num == 0) {
+        process_num = 1;
+    }
+    target_config.process_num = process_num;
+
+    function update_process_num() {
+        for (let i = 0; i < vmake.args.length; i++) {
+            if (vmake.args[i] == "-j") {
+                let reg = /\d+/g;
+                if (vmake.args.length > i + 1 && vmake.args[i + 1].match(reg)) {
+                    target_config.process_num = Number.parseInt(vmake.args[i + 1]);
+                    break;
+                } else {
+                    vmake.warn("find -j param, but not find num, will ignore")
+                }
+            } else {
+                let reg = /-j(\d+)/g;
+                let rst = reg.exec(vmake.args[i]);
+                if (rst) {
+                    target_config.process_num = Number.parseInt(rst[1]);
+                    break;
+                }
+            }
+        }
+    }
+    update_process_num();
+
+
 
     let target = {
         target_name: target_name,
@@ -460,6 +496,10 @@ vmake.cpp = function (target_name, target_type) {
         build_dir: build_dir,
         set_outdir: (outdir) => {
             target_config.outdir = outdir;
+        },
+        multi_process(process_num) {
+            target_config.process_num = process_num;
+            update_process_num();
         },
         add_package: (repo, target_map) => {
             for (const key in target_map) {
@@ -506,6 +546,7 @@ vmake.cpp = function (target_name, target_type) {
         build: async () => {
             let start_time = Date.now();
             vmake.info("Project: %s -> %s, %s", process.cwd(), target_name, target_type);
+            vmake.info("complie with process num: %d", target_config.process_num);
             try {
                 await target_complie(target);
                 await target_link(target);
