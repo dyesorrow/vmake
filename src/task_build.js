@@ -24,7 +24,7 @@ async function handle_dependencies_pkg(target, pkg) {
             // 优先使用远程的md5文件
             let remote_md5 = await vmake.get_content(remote_pre + ".md5");
             let md5_data = JSON.parse(remote_md5);
-            pkg.md5 = md5_data; // 取出md5文件
+            pkg.md5 = md5_data; // 取出md5数据
 
             let changed = false;
             let msg = "";
@@ -42,7 +42,7 @@ async function handle_dependencies_pkg(target, pkg) {
                 let computed_md5 = vmake.md5sum(file);
                 if (computed_md5 != md5_data[it]) {
                     changed = true;
-                    msg = `file not same: local md5 ${computed_md5}, expect md5 ${md5_data[it]}, ${file}`;
+                    msg = `${file} not same, local:${computed_md5}, remote:${md5_data[it]}`;
                     break;
                 }
             }
@@ -500,7 +500,7 @@ vmake.cpp = function (target_name, target_type) {
         set_outdir: (outdir) => {
             target_config.outdir = outdir;
         },
-        multi_process(process_num) {
+        set_multi_process(process_num) {
             if (!user_param_process_num_set) {
                 target_config.process_num = process_num;
             }
