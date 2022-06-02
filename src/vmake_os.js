@@ -33,6 +33,9 @@ vmake.run_multi_process = function (task_size, process_limit, join_one) {
     let run_process = function (resolve, reject) {
         if (task_at < task_size) {
             let to_run = process_limit - wait_end;
+            if(to_run > task_size - task_at){
+                to_run = task_size - task_at;
+            }
             for (let i = 0; i < to_run; i++) {
                 let command = join_one(task_at);
                 task_at++;
