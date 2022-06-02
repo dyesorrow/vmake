@@ -22,7 +22,9 @@ vmake.task.test = async function () {
     target.add_files("src/*.cpp");
     target.add_files("test/*.cpp");
 
-    target.add_ldflag("-static -lpthread");
+    target.add_ldflag("-static");
+    target.add_link("pthread");
+
     target.set_outdir("dest");
     await target.build();
 };
@@ -44,7 +46,9 @@ vmake.task.release = async function () {
     target.add_include("src");
     target.add_files("src/*.cpp");
 
-    target.add_ldflag("-static -lpthread");
+    target.add_ldflag("-static");
+    target.add_link("pthread");
+    
     await target.build();
 
     vmake.release(target, {
