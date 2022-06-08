@@ -1,4 +1,4 @@
-const execAsync = require("child_process").exec
+const execAsync = require("child_process").exec;
 const nodeSpawn = require("child_process").spawnSync;
 const fs = require("fs");
 const crypto = require("crypto");
@@ -33,7 +33,7 @@ vmake.run_multi_process = function (task_size, process_limit, join_one) {
     let run_process = function (resolve, reject) {
         if (task_at < task_size) {
             let to_run = process_limit - wait_end;
-            if(to_run > task_size - task_at){
+            if (to_run > task_size - task_at) {
                 to_run = task_size - task_at;
             }
             for (let i = 0; i < to_run; i++) {
@@ -45,8 +45,9 @@ vmake.run_multi_process = function (task_size, process_limit, join_one) {
                         stdio: "pipe",
                         shell: true,
                     }, (error, stdout, stderr) => {
+                        process.stdout.write(stdout);
+                        process.stderr.write(stderr);
                         if (error) {
-                            process.stderr.write(stderr);
                             if (!rejected) {
                                 rejected = true;
                                 reject();
@@ -68,9 +69,9 @@ vmake.run_multi_process = function (task_size, process_limit, join_one) {
         if (wait_end == 0) {
             resolve();
         }
-    }
+    };
     return new Promise(run_process);
-}
+};
 
 vmake.md5sum = function (file) {
     if (!fs.existsSync(file)) {

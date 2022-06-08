@@ -1,4 +1,4 @@
-const execAsync = require("child_process").exec
+const execAsync = require("child_process").exec;
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -81,13 +81,17 @@ async function handle_dependencies_pkg(target, pkg) {
     }
 
     target.add_include(include_dir);
-    target.add_libdir(lib_dir);
-    if (fs.existsSync(lib_dir)) {
-        if (fs.readdirSync(lib_dir).length > 0) {
-            vmake.debug("add link " + pkg.name);
-            target.add_link(pkg.name);
+
+    if (target.target_type != "static") {
+        target.add_libdir(lib_dir);
+        if (fs.existsSync(lib_dir)) {
+            if (fs.readdirSync(lib_dir).length > 0) {
+                vmake.debug("add link " + pkg.name);
+                target.add_static_link(pkg.name);
+            }
         }
     }
+
     // 复制资源文件到bin目录
     if (fs.existsSync(bin_dir)) {
         vmake.debug("copy bin dir");
@@ -293,7 +297,7 @@ async function handle_obj_complie(target, change_list) {
             command += " " + source + ` -o ${obj_dir}/` + objname;
             vmake.info("[%3d%] compile %s", 12 + Math.floor(85 / change_list_sources.length * (build_at + 1)), source);
             return command;
-        })
+        });
     } catch (error) {
         console.log(error);
         process.exit(-1);
@@ -319,7 +323,6 @@ function handle_remove_old_obj(target, obj_list) {
 async function target_complie(target) {
     const obj_dir = target.build_dir + "/obj";
     vmake.mkdirs(obj_dir);
-
     let obj_list = {};
     let change_list = {};
     await handle_dependencies(target);
@@ -330,7 +333,7 @@ async function target_complie(target) {
 }
 
 async function vscode_cpp_properties(config) {
-    let includes = []
+    let includes = [];
     for (let it of config.includes) {
         includes.push("${workspaceFolder}/" + it);
     }
@@ -360,9 +363,13 @@ async function target_link(target) {
 
     vmake.mkdirs(target_dir);
 
-    let links = [];
-    for (const it of target_config.link) {
-        links.push("-l" + it);
+    let static_links = [];
+    for (const it of target_config.static_links) {
+        static_links.push("-l" + it);
+    }
+    let dynamic_links = [];
+    for (const it of target_config.dynamic_licks) {
+        dynamic_links.push("-l" + it);
     }
 
     if (target_type == "bin") {
@@ -371,7 +378,13 @@ async function target_link(target) {
         for (const lib of target_config.libdirs) {
             command += " -L " + lib;
         }
-        command += " -o " + target_dir + "/" + target_name + " -Wl,--start-group " + links.join(" ") + " -Wl,--end-group";
+        command += " -o " + target_dir + "/" + target_name;
+        if (static_links.length > 0) {
+            command += " -Wl,-Bstatic -Wl,--start-group " + static_links.join(" ") + " -Wl,--end-group";
+        }
+        if (dynamic_links.length > 0) {
+            command += " -Wl,-Bdynamic -Wl,--start-group " + dynamic_links.join(" ") + " -Wl,--end-group";
+        }
         try {
             vmake.info("[%3d%] %s", 99, "link bin result: " + target_dir + "/" + target_name);
             console.log(command);
@@ -443,6 +456,8 @@ vmake.cpp = function (target_name, target_type) {
     const build_dir = "build/" + target_name + "/" + os.platform();
     vmake.mkdirs(build_dir);
 
+    vmake.success("Project: %s -> %s, %s", process.cwd(), target_name, target_type);
+
     let target_config = {
         packages: [],
         cxxflags: [],
@@ -450,10 +465,9 @@ vmake.cpp = function (target_name, target_type) {
         defines: [],
         files: [],
         libdirs: [],
-        link: [],
+        static_links: [],
+        dynamic_licks: [],
         ldflags: [],
-        before: [],
-        after: [],
         objs: [],
         process_num: 1,
     };
@@ -475,7 +489,7 @@ vmake.cpp = function (target_name, target_type) {
                     user_param_process_num_set = true;
                     break;
                 } else {
-                    vmake.warn("find -j param, but not find num, will ignore")
+                    vmake.warn("find -j param, but not find num, will ignore");
                 }
             } else {
                 let reg = /-j(\d+)/g;
@@ -520,8 +534,10 @@ vmake.cpp = function (target_name, target_type) {
         add_include: (data) => {
             target_config.includes.push(data);
         },
-        add_define: (data) => {
-            target_config.defines.push(data);
+        add_define: (...data) => {
+            for (const it of data) {
+                target_config.defines.push(data);
+            }
         },
         add_files: (data) => {
             target_config.files.push(data);
@@ -529,27 +545,47 @@ vmake.cpp = function (target_name, target_type) {
         add_objs: (data) => {
             target_config.objs.push(data);
         },
-        add_libdir: (data) => {
-            target_config.libdirs.push(data);
+        add_libdir: (...data) => {
+            if (target_type == "static") {
+                vmake.warn("static result, ignore libdir: %s", data);
+                return;
+            }
+            for (const it of data) {
+                target_config.libdirs.push(it);
+            }
         },
-        add_ldflag: (data) => {
-            target_config.ldflags.push(data);
+        add_ldflag: (...data) => {
+            if (target_type == "static") {
+                vmake.warn("static result, ignore ldflag: %s", data);
+                return;
+            }
+            for (const it of data) {
+                target_config.ldflags.push(it);
+            }
         },
-        add_before: (func) => {
-            target_config.before.push(func);
+        add_static_link: (...data) => {
+            if (target_type == "static") {
+                vmake.warn("static result, ignore static_link: %s", data);
+                return;
+            }
+            for (const it of data) {
+                target_config.static_links.push(it);
+            }
         },
-        add_after: (func) => {
-            target_config.after.push(func);
-        },
-        add_link: (data) => {
-            target_config.link.push(data);
+        add_dynamic_lick: (...data) => {
+            if (target_type == "static") {
+                vmake.warn("static result, ignore dynamic_lick: %s", data);
+                return;
+            }
+            for (const it of data) {
+                target_config.dynamic_licks.push(it);
+            }
         },
         get_config: () => {
             return target_config;
         },
         build: async () => {
             let start_time = Date.now();
-            vmake.success("Project: %s -> %s, %s", process.cwd(), target_name, target_type);
             vmake.log("complie with process num: %d", target_config.process_num);
             try {
                 await target_complie(target);

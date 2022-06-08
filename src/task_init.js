@@ -2,6 +2,15 @@ const fs = require('fs');
 
 vmake.task.init = function () {
   vmake.mkdirs("src");
+  if (!fs.readdirSync("src").length == 0) {
+    fs.writeFileSync("src/main.cpp", `
+    
+int main(int argc, char const *argv[]) {
+  return 0;
+}
+  
+    `);
+  }
 
   if (!fs.existsSync("vmake.js"))
     fs.writeFileSync("vmake.js", `// more help: https://github.com/dyesorrow/vmake
@@ -23,10 +32,13 @@ vmake.task.build = async function () {
     target.add_define("__DEBUG__");
     target.add_include("src");
     target.add_files("src/*.cpp");
-    // target.add_objs("res/icon/icon.o");
 
-    target.add_ldflag("-static");
-    target.add_link("pthread");
+    target.add_static_link("pthread");
+
+    // target.add_ldflag("-static");
+    // target.add_dynamic_lick("pthread");
+    // target.add_objs("res/icon/icon.o");
+    // target.set_multi_process(2);  // 2个进程构建
 
     target.set_outdir("./dest");
 
