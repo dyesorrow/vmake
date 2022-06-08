@@ -14,6 +14,10 @@ vmake.task.test = async function () {
     target.add_cxxflag("-finput-charset=UTF-8");
     target.add_cxxflag("-Wextra");
 
+    target.add_package("${vmake.get_config("repo", "http://localhost:19901/vmake-repo")}", {
+        "log": "1.1.0",
+    });
+
     if (os.platform() == "win32") {
         target.add_define("WIN32");
     }
@@ -38,6 +42,10 @@ vmake.task.release = async function () {
     target.add_cxxflag("-Wno-write-strings -Wno-unused-parameter -Wno-sign-compare -Wno-format-security");
     target.add_cxxflag("-finput-charset=UTF-8");
     target.add_cxxflag("-Wextra");
+
+    target.add_package("${vmake.get_config("repo", "http://localhost:19901/vmake-repo")}", {
+        "log": "1.1.0",
+    });
 
     if (os.platform() == "win32") {
         target.add_define("WIN32");
