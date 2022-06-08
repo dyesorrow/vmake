@@ -6,6 +6,10 @@ vmake.debug = function (fmt, ...args) {
     }
 }
 
+vmake.log = function (fmt, ...args) {
+    console.log(printf(fmt, ...args));;
+}
+
 vmake.info = function (fmt, ...args) {
     console.log(printf("\u001b[38;5;86m" + fmt + "\u001b[0m", ...args));;
 }

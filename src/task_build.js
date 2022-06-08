@@ -549,8 +549,8 @@ vmake.cpp = function (target_name, target_type) {
         },
         build: async () => {
             let start_time = Date.now();
-            vmake.info("Project: %s -> %s, %s", process.cwd(), target_name, target_type);
-            vmake.info("complie with process num: %d", target_config.process_num);
+            vmake.success("Project: %s -> %s, %s", process.cwd(), target_name, target_type);
+            vmake.log("complie with process num: %d", target_config.process_num);
             try {
                 await target_complie(target);
                 await target_link(target);
