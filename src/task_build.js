@@ -16,15 +16,15 @@ async function handle_dependencies_pkg(target, pkg) {
     let bin_dir = pkg_dir + "/bin";
 
     async function check_pkg() {
-        if (!fs.existsSync(pkg_dir)) {
-            return false;
-        }
-
         try {
             // 优先使用远程的md5文件
             let remote_md5 = await vmake.get_content(remote_pre + ".md5");
             let md5_data = JSON.parse(remote_md5);
             pkg.md5 = md5_data; // 取出md5数据
+
+            if (!fs.existsSync(pkg_dir)) {
+                return false;
+            }
 
             let changed = false;
             let msg = "";
@@ -53,6 +53,9 @@ async function handle_dependencies_pkg(target, pkg) {
         } catch (error) {
             // 如果远程的md5文件无法使用，则只判断文件夹是否存在
             vmake.warn("%s: %s. will ignore the check for this dependency", pkg.name, error);
+            if (!pkg.md5) {
+                pkg.md5 = {};
+            }
         }
         return true;
     }
@@ -65,10 +68,6 @@ async function handle_dependencies_pkg(target, pkg) {
             const unzip = new adm_zip(local_zip);
             vmake.mkdirs(pkg_dir);
             unzip.extractAllTo(pkg_dir);
-
-            if (!pkg.md5) {
-                pkg.md5 = {};
-            }
 
             fs.rmSync(local_zip);
         } catch (error) {
@@ -150,7 +149,7 @@ async function handle_dependencies(target) {
                     if (pkg_info[dpkg_name].md5[file_name] != dpkg.md5[file_name]) {
                         dependencies_log_info.push({
                             "level": "warn",
-                            "msg": `build file not same. ${pkg.name} need ${dpkg_name}:${dpkg.version}:${file_name}:${dpkg.md5[file_name]}. while this vmake config is: ${dpkg_name}:${dpkg.version}:${file_name}:${pkg_info[dpkg_name].md5[file_name]}`
+                            "msg": `build file not same. ${pkg.name} need ${dpkg_name}:${dpkg.version}:${file_name}, expect: ${dpkg.md5[file_name]}, vmake:${pkg_info[dpkg_name].md5[file_name]}`
                         });
                         continue;
                     }
@@ -296,6 +295,7 @@ async function handle_obj_complie(target, change_list) {
             return command;
         })
     } catch (error) {
+        console.log(error);
         process.exit(-1);
     }
 }
