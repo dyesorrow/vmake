@@ -36,7 +36,7 @@ vmake.task.build = async function () {
     target.add_static_link("pthread");
 
     // target.add_ldflag("-static");
-    // target.add_dynamic_lick("pthread");
+    // target.add_dynamic_link("pthread");
     // target.add_objs("res/icon/icon.o");
     // target.set_multi_process(2);  // 2个进程构建
 

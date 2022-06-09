@@ -575,7 +575,7 @@ vmake.cpp = function (target_name, target_type) {
                 target_config.static_links.push(it);
             }
         },
-        add_dynamic_lick: (...data) => {
+        add_dynamic_link: (...data) => {
             if (target_type == "static") {
                 vmake.warn("static result, ignore dynamic_lick: %s", data);
                 return;

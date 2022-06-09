@@ -28,7 +28,7 @@ vmake.task.test = async function () {
     target.add_static_link("pthread");      // 添加静态链接库
 
     // target.add_ldflag("-static");        // 添加链接参数 
-    // target.add_dynamic_lick("pthread");  // 添加动态链接库
+    // target.add_dynamic_link("pthread");  // 添加动态链接库
     // target.add_objs("res/icon/icon.o");  // 添加.o文件
     // target.set_multi_process(2);         // 设置构建是使用的进程数
 
