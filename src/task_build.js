@@ -34,6 +34,9 @@ async function handle_dependencies_pkg(target, pkg) {
                 }
                 let file = pkg_dir + "/" + it;
                 if (!fs.existsSync(file)) {
+                    if (md5_data[it] == "not exist") {
+                        continue;
+                    }
                     changed = true;
                     msg = `file lose: ${file}`;
                     break;
