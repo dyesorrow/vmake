@@ -161,7 +161,7 @@ vmake.ask_reuse = async function (path, not_reuse_callbcak) {
     if (fs.existsSync(path)) {
         vmake.warn("Path exist: %s", path);
         let answer = await inquirer.prompt({ message: "reuse it ? (y/n)", name: "input" });
-        if (answer.input.toUpperCase() != "Y") {
+        if (answer.input.toUpperCase() == "N") {
             vmake.rm(path);
             await not_reuse_callbcak();
         }
@@ -170,8 +170,12 @@ vmake.ask_reuse = async function (path, not_reuse_callbcak) {
 
 vmake.ask = async function (question) {
     let answer = await inquirer.prompt({ message: question + " ? (y/n)", name: "input" });
-    if (answer.input.toUpperCase() != "Y") {
+    if (answer.input.toUpperCase() == "Y" || answer.input == "") {
+        return true;
+    }
+    if (answer.input.toUpperCase() == "N") {
         return false;
     }
-    return true;
+    vmake.error("please input Y or N");
+    return await vmake.ask(question);
 };
