@@ -166,3 +166,11 @@ vmake.reuse_ask = async function (path, not_reuse_callbcak) {
         }
     }
 };
+
+vmake.ask = async function (question) {
+    let answer = await inquirer.prompt({ message: question + " ? (y/n)", name: "input" });
+    if (answer.input.toUpperCase() != "Y") {
+        return false;
+    }
+    return true;
+};
