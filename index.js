@@ -6,10 +6,8 @@ require("./src/vmake_log.js");
 require("./src/vmake_config.js");
 require("./src/vmake_os.js");
 require("./src/vmake_util.js");
+require("./src/vmake_cpp.js");
 
-
-
-require("./src/task_build.js");
 require("./src/task_help.js");
 require("./src/task_example.js");
 require("./src/task_init.js");
