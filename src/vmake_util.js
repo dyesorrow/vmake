@@ -155,7 +155,7 @@ vmake.release(target, {
     vmake.rm(".publish");
 };
 
-vmake.reuse_ask = async function (path, not_reuse_callbcak) {
+vmake.ask_reuse = async function (path, not_reuse_callbcak) {
     const inquirer = vmake.module["inquirer"];
     if (fs.existsSync(path)) {
         vmake.warn("Path exist: %s", path);
