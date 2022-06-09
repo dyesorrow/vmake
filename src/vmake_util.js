@@ -154,3 +154,15 @@ vmake.release(target, {
     vmake.run("vmake publish", ".publish");
     vmake.rm(".publish");
 };
+
+vmake.reuse_ask = function (path, not_reuse_callbcak) {
+    const inquirer = vmake.module["inquirer"];
+    if (fs.existsSync(path)) {
+        vmake.warn("Path exist: %s", path);
+        let answer = await inquirer.prompt({ message: "reuse it ? (y/n)", name: "input" });
+        if (answer.input.toUpperCase() != "Y") {
+            vmake.rm(path);
+            not_reuse_callbcak();
+        }
+    }
+};
