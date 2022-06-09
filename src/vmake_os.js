@@ -50,7 +50,7 @@ vmake.run_multi_process = function (task_size, process_limit, join_one) {
                         if (error) {
                             if (!rejected) {
                                 rejected = true;
-                                reject();
+                                reject(`Fail command: ${command}`);
                             }
                             return;
                         }
@@ -61,7 +61,7 @@ vmake.run_multi_process = function (task_size, process_limit, join_one) {
                     vmake.error("%s", error);
                     if (!rejected) {
                         rejected = true;
-                        reject();
+                        reject(`Fail command: ${command}`);
                     }
                 }
             }

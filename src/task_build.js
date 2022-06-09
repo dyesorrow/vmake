@@ -302,7 +302,7 @@ async function handle_obj_complie(target, change_list) {
             return command;
         });
     } catch (error) {
-        console.log(error);
+        vmake.error("%s", error);
         process.exit(-1);
     }
 }
