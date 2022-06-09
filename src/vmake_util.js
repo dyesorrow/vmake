@@ -165,12 +165,18 @@ vmake.ask_reuse = async function (path, not_reuse_callbcak) {
             vmake.rm(path);
             await not_reuse_callbcak();
         }
+    } else {
+        await not_reuse_callbcak();
     }
 };
 
-vmake.ask = async function (question) {
+vmake.ask = async function (question, default_input) {
+    const inquirer = vmake.module["inquirer"];
     let answer = await inquirer.prompt({ message: question + " ? (y/n)", name: "input" });
-    if (answer.input.toUpperCase() == "Y" || answer.input == "") {
+    if (!answer.input || answer.input == "") {
+        answer.input == default_input;
+    }
+    if (answer.input.toUpperCase() == "Y") {
         return true;
     }
     if (answer.input.toUpperCase() == "N") {
