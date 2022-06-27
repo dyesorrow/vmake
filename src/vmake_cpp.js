@@ -279,7 +279,7 @@ async function handle_obj_list_get(target, obj_list, change_list) {
 
 async function handle_obj_complie(target, obj_list, change_list) {
     const obj_dir = target.build_dir + "/obj";
-    
+
     let old_obj_list = {};
     if (fs.existsSync(obj_dir + "/info.txt")) {
         old_obj_list = JSON.parse(fs.readFileSync(obj_dir + "/info.txt"));
@@ -305,11 +305,9 @@ async function handle_obj_complie(target, obj_list, change_list) {
             command += " " + source + ` -o ${obj_dir}/` + objname;
             vmake.info("[%3d%] compile %s", 12 + Math.floor(85 / change_list_sources.length * (build_at + 1)), source);
             
-            if(old_obj_list[source]){
-                // 成功编译后就更新文件
-                old_obj_list[source] = obj_list[source];
-                fs.writeFileSync(obj_dir + "/info.txt", JSON.stringify(old_obj_list, null, 4));
-            }
+            // 成功编译后就更新文件
+            old_obj_list[source] = obj_list[source];
+            fs.writeFileSync(obj_dir + "/info.txt", JSON.stringify(old_obj_list, null, 4));
             return command;
         });
     } catch (error) {
