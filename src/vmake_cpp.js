@@ -198,7 +198,7 @@ async function handle_obj_list_get(target, obj_list, change_list) {
     try {
         await vmake.run_multi_process(target_config.files.length, target_config.process_num, (build_at) => {
             let files = target_config.files[build_at];
-            vmake.info("[%3d%] resolve include: %s", 10 + Math.floor(20 / target_config.files.length * (build_at + 1)), files);
+            vmake.info("[%3d%] check change: %s", 10 + Math.floor(20 / target_config.files.length * (build_at + 1)), files);
 
             let tmpd_name = files;
             tmpd_name = tmpd_name.replaceAll("\/", "_");
