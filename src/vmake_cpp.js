@@ -278,13 +278,14 @@ async function handle_obj_list_get(target, obj_list, change_list) {
 }
 
 async function handle_obj_complie(target, obj_list, change_list) {
+    const obj_dir = target.build_dir + "/obj";
+    
     let old_obj_list = {};
     if (fs.existsSync(obj_dir + "/info.txt")) {
         old_obj_list = JSON.parse(fs.readFileSync(obj_dir + "/info.txt"));
     }
 
     let target_config = target.get_config();
-    const obj_dir = target.build_dir + "/obj";
     let change_list_sources = [];
     for (const source in change_list) {
         change_list_sources.push(source);
