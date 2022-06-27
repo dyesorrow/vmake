@@ -15,6 +15,11 @@ vmake.mkdirs = function (dirname) {
     }
 };
 
+/**
+ * 实时输出，可以显示颜色
+ * @param {*} command 
+ * @param {*} cwd 
+ */
 vmake.run = function (command, cwd) {
     let ret = nodeSpawn(command, {
         stdio: "inherit",
@@ -26,7 +31,30 @@ vmake.run = function (command, cwd) {
     }
 };
 
-vmake.run_multi_process = function (task_size, process_limit, join_one) {
+/**
+ * 结果全部出来后进行输出。无法显示颜色
+ * @param {*} command 
+ * @param {*} cwd 
+ * @returns 
+ */
+vmake.exec = function (command, cwd) {
+    return new Promise((resolve, reject) => {
+        execAsync(command, {
+            stdio: "pipe",
+            cwd
+        }, (error, stdout, stderr) => {
+            process.stdout.write(stdout);
+            process.stderr.write(stderr);
+            if (error) {
+                reject(`Fail: ${command}`);
+                return;
+            }
+            resolve();
+        });
+    });
+};
+
+vmake.run_multi_process = function (task_size, process_limit, todo) {
     let wait_end = 0;
     let task_at = 0;
     let rejected = false;
@@ -42,7 +70,7 @@ vmake.run_multi_process = function (task_size, process_limit, join_one) {
 
                 new Promise(async (res, rej) => {
                     try {
-                        await join_one(at);
+                        await todo(at);
                     } catch (error) {
                         if (!rejected) {
                             rejected = true;
@@ -52,8 +80,8 @@ vmake.run_multi_process = function (task_size, process_limit, join_one) {
                         return;
                     }
                     wait_end--;
-                    run_process(resolve, reject);
                     res();
+                    run_process(resolve, reject);
                     return;
                 });
 

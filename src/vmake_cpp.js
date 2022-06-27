@@ -196,7 +196,7 @@ async function handle_obj_list_get(target, obj_list, change_list) {
 
 
     try {
-        await vmake.run_multi_process(target_config.files.length, target_config.process_num, (build_at) => {
+        await vmake.run_multi_process(target_config.files.length, target_config.process_num, async (build_at) => {
             let files = target_config.files[build_at];
             vmake.info("[%3d%] check change: %s", 10 + Math.floor(20 / target_config.files.length * (build_at + 1)), files);
 
@@ -218,7 +218,7 @@ async function handle_obj_list_get(target, obj_list, change_list) {
             command += " > " + tmpd_name;
 
             vmake.debug("%s", command);
-            vmake.run(command);  // TODO 可能存在输出混乱的问题，遇到了再说
+            await vmake.exec(command);  // TODO 可能存在输出混乱的问题，遇到了再说
 
             let result = fs.readFileSync(tmpd_name).toString();
             result = result.replaceAll(/\\\r?\n/g, " ");
@@ -308,7 +308,7 @@ async function handle_obj_complie(target, obj_list, change_list) {
     }
 
     try {
-        await vmake.run_multi_process(change_list_sources.length, target_config.process_num, (build_at) => {
+        await vmake.run_multi_process(change_list_sources.length, target_config.process_num, async (build_at) => {
             let source = change_list_sources[build_at];
             let objname = get_obj_name(source);
             let command = "g++ -fdiagnostics-color -c " + target_config.cxxflags.join(" ");
@@ -321,7 +321,7 @@ async function handle_obj_complie(target, obj_list, change_list) {
             command += " " + source + ` -o ${obj_dir}/` + objname;
             vmake.info("[%3d%] compile %s", 30 + Math.floor(67 / change_list_sources.length * (build_at + 1)), source);
 
-            vmake.run(command); // TODO 可能存在输出混乱的问题，遇到了再说
+            await vmake.exec(command); // TODO 可能存在输出混乱的问题，遇到了再说
 
             // 成功编译后就更新文件
             old_obj_list[source] = obj_list[source];

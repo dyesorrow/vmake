@@ -1,6 +1,6 @@
 {
   "name": "vmake",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "package manager and build tool for common c++ project",
   "main": "index.js",
   "bin": {
