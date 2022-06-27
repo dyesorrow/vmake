@@ -22,7 +22,7 @@ vmake.run = function (command, cwd) {
         cwd,
     });
     if (ret.status != 0) {
-        throw "failed: " + command;
+        throw "Fail: " + command;
     }
 };
 
@@ -30,6 +30,7 @@ vmake.run_multi_process = function (task_size, process_limit, join_one) {
     let wait_end = 0;
     let task_at = 0;
     let rejected = false;
+
     let run_process = function (resolve, reject) {
         if (task_at < task_size) {
             let to_run = process_limit - wait_end;
@@ -37,33 +38,27 @@ vmake.run_multi_process = function (task_size, process_limit, join_one) {
                 to_run = task_size - task_at;
             }
             for (let i = 0; i < to_run; i++) {
-                let command = join_one(task_at);
+                const at = task_at;
+
+                new Promise(async (res, rej) => {
+                    try {
+                        await join_one(at);
+                    } catch (error) {
+                        if (!rejected) {
+                            rejected = true;
+                            reject(error);
+                        }
+                        res();
+                        return;
+                    }
+                    wait_end--;
+                    run_process(resolve, reject);
+                    res();
+                    return;
+                });
+
                 task_at++;
                 wait_end++;
-                try {
-                    execAsync(command, {
-                        stdio: "pipe",
-                        shell: true,
-                    }, (error, stdout, stderr) => {
-                        process.stdout.write(stdout);
-                        process.stderr.write(stderr);
-                        if (error) {
-                            if (!rejected) {
-                                rejected = true;
-                                reject(`Fail command: ${command}`);
-                            }
-                            return;
-                        }
-                        wait_end--;
-                        run_process(resolve, reject);
-                    });
-                } catch (error) {
-                    vmake.error("%s", error);
-                    if (!rejected) {
-                        rejected = true;
-                        reject(`Fail command: ${command}`);
-                    }
-                }
             }
         }
         if (wait_end == 0) {

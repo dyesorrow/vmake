@@ -199,6 +199,7 @@ async function handle_obj_list_get(target, obj_list, change_list) {
         await vmake.run_multi_process(target_config.files.length, target_config.process_num, (build_at) => {
             let files = target_config.files[build_at];
 
+
             let tmpd_name = files;
             tmpd_name = tmpd_name.replaceAll("\/", "_");
             tmpd_name = tmpd_name.replaceAll("\*", "_");
@@ -235,7 +236,8 @@ async function handle_obj_list_get(target, obj_list, change_list) {
                 }
                 rst = reg.exec(result);
             }
-            return command;
+
+            vmake.info("[%3d%] resolve dependency rule: %s", 10 + Math.floor(20 / target_config.files.length * (build_at + 1)), files);
         });
     } catch (error) {
         vmake.error("%s", error);
@@ -319,12 +321,13 @@ async function handle_obj_complie(target, obj_list, change_list) {
                 command += " -I " + inc;
             }
             command += " " + source + ` -o ${obj_dir}/` + objname;
-            vmake.info("[%3d%] compile %s", 12 + Math.floor(85 / change_list_sources.length * (build_at + 1)), source);
+            vmake.info("[%3d%] compile %s", 30 + Math.floor(67 / change_list_sources.length * (build_at + 1)), source);
+
+            vmake.run(command);
 
             // 成功编译后就更新文件
             old_obj_list[source] = obj_list[source];
             fs.writeFileSync(obj_dir + "/info.txt", JSON.stringify(old_obj_list, null, 4));
-            return command;
         });
     } catch (error) {
         vmake.error("%s", error);
