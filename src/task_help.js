@@ -12,5 +12,5 @@ Option:
 
 Report bugs to: dyesorrow@qq.com   
 More help: https://github.com/dyesorrow/vmake
-Version: 1.0.1 `);
+Version: 1.0.2 `);
 }

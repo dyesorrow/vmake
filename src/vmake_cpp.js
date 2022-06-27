@@ -195,37 +195,53 @@ async function handle_obj_list_get(target, obj_list, change_list) {
     const obj_dir = build_dir + "/obj";
 
 
-    for (const files of target_config.files) {
-        let command = "g++ -MM";
-        for (const inc of target_config.includes) {
-            command += " -I " + inc;
-        }
-        for (const def of target_config.defines) {
-            command += " -D" + def;
-        }
-        command += " " + files;
-        command += " > " + obj_dir + "/tmp.d";
+    try {
+        await vmake.run_multi_process(target_config.files.length, target_config.process_num, (build_at) => {
+            let files = target_config.files[build_at];
 
-        vmake.debug("%s", command);
-        vmake.run(command);
+            let tmpd_name = files;
+            tmpd_name = tmpd_name.replaceAll("\/", "_");
+            tmpd_name = tmpd_name.replaceAll("\*", "_");
+            tmpd_name = tmpd_name.replaceAll("\\", "_");
+            tmpd_name = tmpd_name.replaceAll("\.", "_");
+            tmpd_name = obj_dir + "/" + tmpd_name + "_" + build_at + ".d";
 
-        let result = fs.readFileSync(obj_dir + "/tmp.d").toString();
-        result = result.replaceAll(/\\\r?\n/g, " ");
-        let reg = /(.+?): (.+)/g;
-        let rst = reg.exec(result);
-        while (rst) {
-            let depends = rst[2].trim().split(" ");
-            obj_list[depends[0]] = {};
-            for (let dep of depends) {
-                dep = dep.trim();
-                if (dep.length == 0) {
-                    continue;
-                }
-                obj_list[depends[0]][dep] = vmake.md5sum(dep);
+            let command = "g++ -MM";
+            for (const inc of target_config.includes) {
+                command += " -I " + inc;
             }
-            rst = reg.exec(result);
-        }
+            for (const def of target_config.defines) {
+                command += " -D" + def;
+            }
+            command += " " + files;
+            command += " > " + tmpd_name;
+
+            vmake.debug("%s", command);
+            vmake.run(command);
+
+            let result = fs.readFileSync(tmpd_name).toString();
+            result = result.replaceAll(/\\\r?\n/g, " ");
+            let reg = /(.+?): (.+)/g;
+            let rst = reg.exec(result);
+            while (rst) {
+                let depends = rst[2].trim().split(" ");
+                obj_list[depends[0]] = {};
+                for (let dep of depends) {
+                    dep = dep.trim();
+                    if (dep.length == 0) {
+                        continue;
+                    }
+                    obj_list[depends[0]][dep] = vmake.md5sum(dep);
+                }
+                rst = reg.exec(result);
+            }
+            return command;
+        });
+    } catch (error) {
+        vmake.error("%s", error);
+        process.exit(-1);
     }
+
     vmake.debug("%s", obj_list);
 
     try {
@@ -304,7 +320,7 @@ async function handle_obj_complie(target, obj_list, change_list) {
             }
             command += " " + source + ` -o ${obj_dir}/` + objname;
             vmake.info("[%3d%] compile %s", 12 + Math.floor(85 / change_list_sources.length * (build_at + 1)), source);
-            
+
             // 成功编译后就更新文件
             old_obj_list[source] = obj_list[source];
             fs.writeFileSync(obj_dir + "/info.txt", JSON.stringify(old_obj_list, null, 4));
