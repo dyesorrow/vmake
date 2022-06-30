@@ -319,7 +319,7 @@ async function handle_obj_complie(target, obj_list, change_list) {
                 command += " -I " + inc;
             }
             command += " " + source + ` -o ${obj_dir}/` + objname;
-            vmake.info("[%3d%] 编译 %s", 30 + Math.floor(67 / change_list_sources.length * (build_at + 1)), source);
+            vmake.info("[%3d%] 编译: %s", 30 + Math.floor(67 / change_list_sources.length * (build_at + 1)), source);
 
             await vmake.exec(command); // TODO 可能存在输出混乱的问题，遇到了再说
 
