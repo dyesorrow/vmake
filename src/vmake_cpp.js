@@ -390,7 +390,9 @@ async function target_link(target) {
     let target_type = target.target_type;
     vmake.mkdirs(target_dir);
 
-    vmake.copy("./res", target_dir); // 拷贝资源到目标目录
+    if (fs.existsSync("./res")) {
+        vmake.copy("./res", target_dir); // 拷贝资源到目标目录
+    }
 
     let static_links = [];
     for (const it of target_config.static_links) {
