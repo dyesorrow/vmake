@@ -13,14 +13,14 @@ vmake.task.publish = async function () {
             repo: vmake.get_config("repo", "http://localhost:19901/vmake-repo")
         }, null, 4));
         is_init = true;
-        vmake.info("init vmakepkg.json");
+        vmake.info("添加 vmakepkg.json");
     }
 
     const init_dir = {
-        "include": "init dir ./include",
-        "lib": "init dir ./lib",
-        "bin": "init dir ./bin, push resource files, dlls here",
-        "src": "init dir ./src"
+        "include": "添加目录 ./include",
+        "lib": "添加目录 ./lib",
+        "bin": "添加目录 ./bin, 可以存放资源文件，如dll",
+        "src": "添加目录 ./src"
     };
 
     for (const dir in init_dir) {
@@ -32,24 +32,24 @@ vmake.task.publish = async function () {
     }
 
     if (!fs.existsSync("./readme.md")) {
-        fs.writeFileSync("readme.md", "no description");
-        vmake.info("init readme.md");
+        fs.writeFileSync("readme.md", "没有描述信息");
+        vmake.info("添加 readme.md");
         is_init = true;
     }
 
     if (is_init) {
-        vmake.info("just do init, not publish");
+        vmake.info("初始化完成");
         return;
     }
 
     try {
         let config = JSON.parse(fs.readFileSync("./vmakepkg.json").toString());
         if (config.name == "") {
-            vmake.info("vmakepkg.json is init file, not set name, will not publish");
+            vmake.info("vmakepkg.json 没有设置 name 属性");
             return;
         }
 
-        vmake.info("[0%] the configuration is as follows: ");
+        vmake.info("[0%] 配置如下: ");
         console.log(config);
 
         vmake.mkdirs(".publish");
@@ -72,13 +72,13 @@ vmake.task.publish = async function () {
         fs.writeFileSync(".publish/md5.txt", JSON.stringify(vmake.dir_md5sum("lib", "include", "bin", "src", "dependencies.json", "readme.md"), null, 4));
 
         let pre = `${config.repo}/${config.name}/${os.platform()}-${config.version}`;
-        vmake.info("[50%] upload >>> %s", pre);
+        vmake.info("[50%] 上传到 >>> %s", pre);
 
         await vmake.upload("./.publish/dest.zip", `${pre}.zip`);
         await vmake.upload("./.publish/md5.txt", `${pre}.md5`);
         await vmake.upload("./readme.md", `${config.repo}/${config.name}/readme.md`);
 
-        vmake.success("%s", "[100%] success!");
+        vmake.success("%s", "[100%] 完成!");
     } catch (error) {
         console.log(error);
     }

@@ -88,11 +88,11 @@ vmake.wildcard_test = function (wildcard_str, source_str) {
 
 vmake.release = function (target, config) {
     if (!target || target.target_type != "static") {
-        vmake.error("function vmake.release only support static target build");
+        vmake.error(" vmake.release 函数只支持静态链接库的打包");
         return false;
     }
     if (!config || !config.includefiles || !config.version || !config.repo) {
-        vmake.error("function vmake.release use error. right example: %s", `
+        vmake.error("vmake.release 使用错误，缺少必要参数。 正确示例如下: %s", `
 
 vmake.release(target, {
     includefiles: [
@@ -109,7 +109,7 @@ vmake.release(target, {
     }
 
     if (!config.sourcefiles) {
-        vmake.info("no source files will be copy.");
+        vmake.log("无源文件进行拷贝.");
     }
 
     let includefiles = config.includefiles;
@@ -127,7 +127,7 @@ vmake.release(target, {
     vmake.copy("src/", ".publish/include", (source) => {
         for (const it of includefiles) {
             if (vmake.wildcard_test(it, source)) {
-                vmake.info("[include copy]: %s", source);
+                vmake.info("[复制include]: %s", source);
                 return true;
             }
         }
@@ -138,7 +138,7 @@ vmake.release(target, {
     vmake.copy("src/", ".publish/src", (source) => {
         for (const it of sourcefiles) {
             if (vmake.wildcard_test(it, source)) {
-                vmake.info("[source  copy]: %s", source);
+                vmake.info("[复制src]: %s", source);
                 return true;
             }
         }
@@ -159,8 +159,8 @@ vmake.ask_reuse = async function (path, not_reuse_callbcak) {
     const inquirer = vmake.module["inquirer"];
     const fs = require("fs");
     if (fs.existsSync(path)) {
-        vmake.warn("Path exist: %s", path);
-        let answer = await inquirer.prompt({ message: "reuse it ? (y/n)", name: "input" });
+        vmake.warn("路径已经存在文件或者文件夹: %s", path);
+        let answer = await inquirer.prompt({ message: "继续使用 ? (y/n)", name: "input" });
         if (answer.input.toUpperCase() == "N") {
             vmake.rm(path);
             await not_reuse_callbcak();
@@ -182,6 +182,6 @@ vmake.ask = async function (question, default_input) {
     if (answer.input.toUpperCase() == "N") {
         return false;
     }
-    vmake.error("please input Y or N");
+    vmake.error("请输入 Y 或者 N");
     return await vmake.ask(question);
 };

@@ -131,7 +131,7 @@ vmake.dir_md5sum = function (...dir_list) {
 vmake.copy = function (source, dest, filter) {
     function do_copy(fsource, fdest) {
         if (!fs.existsSync(fsource)) {
-            vmake.error("file not exist: %s", fsource);
+            vmake.error("文件不存在: %s", fsource);
             return;
         }
         let stat = fs.statSync(fsource);

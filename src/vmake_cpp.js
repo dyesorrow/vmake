@@ -37,24 +37,24 @@ async function handle_dependencies_pkg(target, pkg) {
                         continue;
                     }
                     changed = true;
-                    msg = `file lose: ${file}`;
+                    msg = `文件丢失: ${file}`;
                     break;
                 }
 
                 let computed_md5 = vmake.md5sum(file);
                 if (computed_md5 != md5_data[it]) {
                     changed = true;
-                    msg = `${file} not same, local:${computed_md5}, remote:${md5_data[it]}`;
+                    msg = `${file} 发生变化, 本地:${computed_md5}, 远程:${md5_data[it]}`;
                     break;
                 }
             }
             if (changed) {
-                vmake.warn("%s: remote package have changed, will download newest. %s", pkg.name, msg);
+                vmake.warn("%s: 远程文件发生改变. %s", pkg.name, msg);
                 return false;
             }
         } catch (error) {
             // 如果远程的md5文件无法使用，则只判断文件夹是否存在
-            vmake.warn("%s: %s. will ignore the check for this dependency", pkg.name, error);
+            vmake.warn("%s: %s. 远程md5无法获取，将忽略此依赖的检查", pkg.name, error);
             if (!pkg.md5) {
                 pkg.md5 = {};
             }
@@ -73,7 +73,7 @@ async function handle_dependencies_pkg(target, pkg) {
 
             fs.rmSync(local_zip);
         } catch (error) {
-            vmake.error("handle package error, url=%s, error: %s", url, error);
+            vmake.error("处理依赖包时出现错误, url=%s, error: %s", url, error);
             process.exit(-1);
         }
     }
@@ -116,7 +116,7 @@ async function handle_dependencies(target) {
     for (let i = 0; i < target_config.packages.length; i++) {
         let pkg = target_config.packages[i];
         try {
-            vmake.info("[%3d%] %s", Math.floor(10 / target_config.packages.length * (i + 1)), `resolve dependencies: ${pkg.name}`);
+            vmake.info("[%3d%] %s", Math.floor(10 / target_config.packages.length * (i + 1)), `处理依赖: ${pkg.name}`);
             await handle_dependencies_pkg(target, pkg);
             pkg_info[pkg.name] = {
                 repo: pkg.repo,
@@ -140,22 +140,22 @@ async function handle_dependencies(target) {
                 if (!pkg_info[dpkg_name]) {
                     dependencies_log_info.push({
                         "level": "error",
-                        "msg": `dependency lose. ${pkg.name} need ${dpkg_name}:${dpkg.version}`
+                        "msg": `依赖缺失 ${pkg.name} 需要 ${dpkg_name}:${dpkg.version}`
                     });
                     continue;
                 }
                 if (pkg_info[dpkg_name].version != dpkg.version) {
                     dependencies_log_info.push({
-                        "level": "warn",
-                        "msg": `version not same. ${pkg.name} need ${dpkg_name}:${dpkg.version}`
+                        "level": "warn", // 不一定造成编译失败
+                        "msg": `依赖版本不同. ${pkg.name} 需要 ${dpkg_name}:${dpkg.version}`
                     });
                     continue;
                 }
                 for (const file_name in dpkg.md5) {
                     if (pkg_info[dpkg_name].md5[file_name] != dpkg.md5[file_name]) {
                         dependencies_log_info.push({
-                            "level": "warn",
-                            "msg": `build file not same. ${pkg.name} need ${dpkg_name}:${dpkg.version}:${file_name}, expect: ${dpkg.md5[file_name]}, vmake:${pkg_info[dpkg_name].md5[file_name]}`
+                            "level": "warn", // 不一定造成编译失败
+                            "msg": `依赖冲突. ${pkg.name} 需要 ${dpkg_name}:${dpkg.version}:${file_name}, 期待: ${dpkg.md5[file_name]}, 本项目导入:${pkg_info[dpkg_name].md5[file_name]}`
                         });
                         continue;
                     }
@@ -198,7 +198,7 @@ async function handle_obj_list_get(target, obj_list, change_list) {
     try {
         await vmake.run_multi_process(target_config.files.length, target_config.process_num, async (build_at) => {
             let files = target_config.files[build_at];
-            vmake.info("[%3d%] check change: %s", 10 + Math.floor(20 / target_config.files.length * (build_at + 1)), files);
+            vmake.info("[%3d%] 检查: %s", 10 + Math.floor(20 / target_config.files.length * (build_at + 1)), files);
 
             let tmpd_name = files;
             tmpd_name = tmpd_name.replaceAll("\/", "_");
@@ -319,7 +319,7 @@ async function handle_obj_complie(target, obj_list, change_list) {
                 command += " -I " + inc;
             }
             command += " " + source + ` -o ${obj_dir}/` + objname;
-            vmake.info("[%3d%] compile %s", 30 + Math.floor(67 / change_list_sources.length * (build_at + 1)), source);
+            vmake.info("[%3d%] 编译 %s", 30 + Math.floor(67 / change_list_sources.length * (build_at + 1)), source);
 
             await vmake.exec(command); // TODO 可能存在输出混乱的问题，遇到了再说
 
@@ -383,14 +383,14 @@ async function vscode_cpp_properties(config) {
 }
 
 async function target_link(target) {
-
     let build_dir = target.build_dir;
     let target_dir = target.target_dir;
     let target_config = target.get_config();
     let target_name = target.target_name;
     let target_type = target.target_type;
-
     vmake.mkdirs(target_dir);
+
+    vmake.copy("./res", target_dir); // 拷贝资源到目标目录
 
     let static_links = [];
     for (const it of target_config.static_links) {
@@ -415,7 +415,7 @@ async function target_link(target) {
             command += " -Wl,-Bdynamic -Wl,--start-group " + dynamic_links.join(" ") + " -Wl,--end-group";
         }
         try {
-            vmake.info("[%3d%] %s", 99, "link bin result: " + target_dir + "/" + target_name);
+            vmake.info("[%3d%] %s", 99, "构建可执行文件: " + target_dir + "/" + target_name);
             console.log(command);
             vmake.run(command);
         } catch (error) {
@@ -429,7 +429,7 @@ async function target_link(target) {
         // 静态链接库
         let command = `ar rcs ${target_dir + "/lib" + target_name}.a ${build_dir}/obj/*.o ` + target_config.objs.join(" ");
         try {
-            vmake.info("[%3d%] %s", 99, "link static result: " + `${target_dir + "/lib" + target_name}.a`);
+            vmake.info("[%3d%] %s", 99, "构建静态库: " + `${target_dir + "/lib" + target_name}.a`);
             console.log(command);
             vmake.run(command);
         } catch (error) {
@@ -452,7 +452,7 @@ async function target_link(target) {
             command += " -o " + target_dir + "/lib" + target_name + ".so " + target_config.ldflags.join(" ");
         }
         try {
-            vmake.info("[%3d%] %s", 99, "link shared result: " + target_dir + "/lib" + target_name + ".so ");
+            vmake.info("[%3d%] %s", 99, "构建动态库: " + target_dir + "/lib" + target_name + ".so ");
             console.log(command);
             vmake.run(command);
         } catch (error) {
@@ -461,7 +461,7 @@ async function target_link(target) {
         }
         return;
     }
-    vmake.error("Not support target [%s], please choose from the following: bin, static, shared", target_type);
+    vmake.error("不支持的目标类型 [%s], 请从以下进行选择: bin, static, shared", target_type);
     process.exit(-1);
 }
 
@@ -485,7 +485,7 @@ vmake.cpp = function (target_name, target_type) {
     const build_dir = "build/" + target_name + "/" + os.platform();
     vmake.mkdirs(build_dir);
 
-    vmake.success("Project: %s -> %s, %s", process.cwd(), target_name, target_type);
+    vmake.success("构建: %s -> %s, %s", process.cwd(), target_name, target_type);
 
     let target_config = {
         packages: [],
@@ -518,7 +518,7 @@ vmake.cpp = function (target_name, target_type) {
                     user_param_process_num_set = true;
                     break;
                 } else {
-                    vmake.warn("find -j param, but not find num, will ignore");
+                    vmake.warn("发现 -j 参数, 但是没有找到设置的数值, 将被忽略");
                 }
             } else {
                 let reg = /-j(\d+)/g;
@@ -564,9 +564,7 @@ vmake.cpp = function (target_name, target_type) {
             target_config.includes.push(data);
         },
         add_define: (...data) => {
-            for (const it of data) {
-                target_config.defines.push(data);
-            }
+            target_config.defines.push(...data);
         },
         add_files: (data) => {
             target_config.files.push(data);
@@ -576,7 +574,7 @@ vmake.cpp = function (target_name, target_type) {
         },
         add_libdir: (...data) => {
             if (target_type == "static") {
-                vmake.warn("static result, ignore libdir: %s", data);
+                vmake.warn("static 目标, 将忽略库目录设置: %s", data);
                 return;
             }
             for (const it of data) {
@@ -585,7 +583,7 @@ vmake.cpp = function (target_name, target_type) {
         },
         add_ldflag: (...data) => {
             if (target_type == "static") {
-                vmake.warn("static result, ignore ldflag: %s", data);
+                vmake.warn("static 目标, 将忽略链接参数: %s", data);
                 return;
             }
             for (const it of data) {
@@ -594,7 +592,7 @@ vmake.cpp = function (target_name, target_type) {
         },
         add_static_link: (...data) => {
             if (target_type == "static") {
-                vmake.warn("static result, ignore static_link: %s", data);
+                vmake.warn("static 目标, 将忽略静态链接配置: %s", data);
                 return;
             }
             for (const it of data) {
@@ -603,7 +601,7 @@ vmake.cpp = function (target_name, target_type) {
         },
         add_dynamic_link: (...data) => {
             if (target_type == "static") {
-                vmake.warn("static result, ignore dynamic_lick: %s", data);
+                vmake.warn("static 目标, 将忽略动态链接配置: %s", data);
                 return;
             }
             for (const it of data) {
@@ -615,7 +613,7 @@ vmake.cpp = function (target_name, target_type) {
         },
         build: async () => {
             let start_time = Date.now();
-            vmake.log("complie with process num: %d", target_config.process_num);
+            vmake.log("编译使用进程数: %d", target_config.process_num);
             try {
                 await target_complie(target);
                 await target_link(target);
@@ -627,7 +625,7 @@ vmake.cpp = function (target_name, target_type) {
             if (target_config.outdir) {
                 vmake.copy(target.target_dir, target_config.outdir);
             }
-            vmake.success("[100%] build end! time cost: %s", time_format(Date.now() - start_time));
+            vmake.success("[100%] 构建完成! 耗时: %s", time_format(Date.now() - start_time));
         },
         require: async (url, force) => {
             let name = url.substring(url.lastIndexOf("/") + 1);

@@ -2,7 +2,8 @@ const fs = require('fs');
 
 vmake.task.init = function () {
   vmake.mkdirs("src");
-  if (!fs.readdirSync("src").length == 0) {
+  vmake.mkdirs("res");
+  if (fs.readdirSync("src").length == 0) {
     fs.writeFileSync("src/main.cpp", `
     
 int main(int argc, char const *argv[]) {
@@ -26,25 +27,36 @@ vmake.task.build = async function () {
     target.add_cxxflag("-Wextra");
 
     target.add_package("${vmake.get_config("repo", "http://localhost:19901/vmake-repo")}", {
-        "log": "1.1.0",
+        "hutool": "1.1.0",
     });
 
     target.add_define("__DEBUG__");
     target.add_include("src");
     target.add_files("src/*.cpp");
 
-    target.add_static_link("pthread");
+    target.add_dynamic_link("pthread");
 
     // target.add_ldflag("-static");
     // target.add_dynamic_link("pthread");
     // target.add_objs("res/icon/icon.o");
     // target.set_multi_process(2);  // 2个进程构建
 
-    target.set_outdir("./dest");
+    target.set_outdir("./bin");
 
     await target.build();
 }; 
 `);
+
+if (!fs.existsSync(".gitignore")){
+  fs.writeFileSync(".gitignore", `
+build
+bin
+dest
+node_modules
+.svn
+*.log
+  `)
+}
 
   if (!fs.existsSync(".clang-format"))
     fs.writeFileSync(".clang-format", `---

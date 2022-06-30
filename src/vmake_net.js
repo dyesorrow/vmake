@@ -12,7 +12,7 @@ vmake.download = async function (uri, dest) {
 
 vmake.upload = async function (local, remote) {
     try {
-        vmake.info("upload: %s > %s", local, remote);
+        vmake.info("上传: %s > %s", local, remote);
         let readStream = fs.createReadStream(local);
         await fetch(remote, {
             method: "PUT",
@@ -33,7 +33,7 @@ vmake.get_content = function (uri) {
         }
         httpx.get(uri, (res) => {
             if (res.statusCode !== 200) {
-                reject(`Get content error, code ${res.statusCode}: ${uri}`);
+                reject(`获取远程文本错误, ${res.statusCode}: ${uri}`);
                 return;
             }
             res.on('data', (data) => {
@@ -51,11 +51,24 @@ vmake.get_content = function (uri) {
 vmake.wget = function (src, dist, option) {
     return new Promise((resolve, reject) => {
         let dir = Path.dirname(dist);
-        if(!fs.existsSync(dir)){
+        if (!fs.existsSync(dir)) {
             vmake.mkdirs(dir);
         }
         let download = wget.download(src, dist, option);
         let process_bar = vmake.process_bar(src + ": ");
+
+        if (vmake.get_config("tty") === false) {
+            process_bar = {
+                start() {
+                    vmake.log("下载：%s", src);
+                },
+                end() {
+                    vmake.log("下载完成");
+                },
+                set_process() { },
+            };
+        }
+
         download.on('error', function (err) {
             process_bar.end();
             reject(err);
