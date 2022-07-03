@@ -390,6 +390,11 @@ async function target_link(target) {
     let target_type = target.target_type;
     vmake.mkdirs(target_dir);
 
+    if (target_config.files.length == 0) {
+        vmake.warn("没有源文件, 忽略链接操作, 将不会产生连接结果");
+        return;
+    }
+
     if (fs.existsSync("./res")) {
         vmake.copy("./res", target_dir); // 拷贝资源到目标目录
     }

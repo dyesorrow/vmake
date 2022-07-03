@@ -19,6 +19,8 @@
 // \u001b[{s}	保存光标当前所在位置
 // \u001b[{u}	读取光标上一次保存的位置
 
+const fs = require("fs");
+
 vmake.process_bar = function (info, piece) {
     info = info || "";
     piece = piece || ">";
@@ -120,7 +122,13 @@ vmake.release(target, {
     vmake.rm(".publish");
     vmake.mkdirs(".publish");
     vmake.run("vmake publish", ".publish");
-    vmake.copy(target.target_dir + "/lib" + target.target_name + ".a", ".publish/lib" + "/lib" + target.target_name + ".a");
+
+    let static_result_name = target.target_dir + "/lib" + target.target_name + ".a";
+    if (fs.existsSync(static_result_name)) {
+        vmake.copy(static_result_name, ".publish/lib" + "/lib" + target.target_name + ".a");
+    } else {
+        vmake.warn("不存在静态连接结果文件. 已忽略复制: %s", static_result_name);
+    }
     vmake.copy(target.build_dir + "/lib/dependencies.json", ".publish/dependencies.json");
 
     // 拷贝头文件
@@ -145,7 +153,6 @@ vmake.release(target, {
         return false;
     });
 
-    const fs = require("fs");
     fs.writeFileSync(".publish/vmakepkg.json", JSON.stringify({
         name: target.target_name,
         version: version,
