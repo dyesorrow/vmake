@@ -20,6 +20,7 @@
 // \u001b[{u}	读取光标上一次保存的位置
 
 const fs = require("fs");
+const os = require("os");
 
 vmake.process_bar = function (info, piece) {
     info = info || "";
@@ -191,4 +192,149 @@ vmake.ask = async function (question, default_input) {
     }
     vmake.error("请输入 Y 或者 N");
     return await vmake.ask(question);
+};
+
+vmake.require = async function (url) {
+    let name = url.substring(url.lastIndexOf("/") + 1);
+    let dist_path = os.tmpdir() + "/vmake/script/" + name;
+    try {
+        await vmake.download(url, dist_path);
+    } catch (error) {
+        vmake.warn("下载错误: " + url);
+    }
+    return require(path.join(process.cwd(), dist_path));
+};
+
+
+
+/**
+ * 一个简洁的不关注性能的模板函数，使用示例如下：
+ * ```
+ * vmake.render(`
+ * #include "text.h"
+ * 
+ * <%
+ * for(let inc of includes){
+ *     <@
+ *     #include "#{it}" @>
+ * }
+ * %>
+ * `, {includes: [
+ *     "test.h"
+ * ]})
+ * ```
+ * @param {*} tmpl 
+ * @param {*} data 
+ * @returns 
+ */
+
+vmake.render = function (tmpl, data) {
+    let resultStr = "";
+    let print = function (text) {
+        resultStr += text;
+    };
+    let functionStr = "";
+    let textType = "text";
+
+    let beforeIsWrap = false;
+    let spaceCount = 0;
+
+    for (let i = 0; i < tmpl.length; i++) {
+        if (tmpl.charAt(i) === '<' && tmpl.charAt(i + 1) === '%') {
+            if (beforeIsWrap && spaceCount > 0) {
+                resultStr = resultStr.substring(0, resultStr.length - spaceCount); // 剔除多余的空格
+            }
+            functionStr = "";
+            textType = "func";
+            i += 2;
+        }
+        if (tmpl.charAt(i) === '%' && tmpl.charAt(i + 1) === '>') {
+            functionStr = functionStr.replaceAll(/#\{(.+?)\}/g, "${$1}");
+            functionStr = functionStr.replaceAll(/([ ]*)<@( *\n)?([\S\s]*?)@>/g, function (m, p1, p2, p3) {
+                p3 = p3 || p2;
+                let lines = p3.split("\n");
+                if(p2 && lines.length > 1){
+                    lines[0] = lines[0].substring(p1.length);
+                }
+                for (let i = 1; i < lines.length; i++) {
+                    lines[i] = lines[i].substring(p1.length);
+                }
+                let output = "print(`" + lines.join("\n") + "`);";
+                output = output.replaceAll(/#\{(.+?)\}/g, "${$1}");
+                return output;
+            });
+
+
+            let argNames = [];
+            let valParas = [];
+            for (const key in data) {
+                argNames.push(key);
+                valParas.push("data." + key);
+            }
+            let exeStr = `function __function( ${argNames.join(", ")} ){ ${functionStr} }; __function(${valParas.join(", ")});`;
+            eval(exeStr);
+            textType = "text";
+            i += 2;
+
+            for (; i < tmpl.length; i++) {
+                if (tmpl.charAt(i) === ' ') {
+                    continue;
+                }
+                if (tmpl.charAt(i) === "\n") {
+                    i++;
+                }
+                break;
+            }
+        }
+        if (tmpl.charAt(i) === '\n') {
+            beforeIsWrap = true;
+        }
+        if (tmpl.charAt(i) !== '\n' && tmpl.charAt(i) !== ' ') {
+            beforeIsWrap = false;
+        }
+        if (tmpl.charAt(i) === ' ') {
+            spaceCount++;
+        } else {
+            spaceCount = 0;
+        }
+
+        if (textType == "text") {
+            resultStr += tmpl.charAt(i);
+        }
+        if (textType == "func") {
+            functionStr += tmpl.charAt(i);
+        }
+
+    }
+    return resultStr;
+};
+
+vmake.big_hump = function (str) {
+    return vmake.hump(str, true);
+};
+
+vmake.hump = function (str, firstup) {
+    let result = "";
+    let upnext = false;
+    for (let i = 0; i < str.length; i++) {
+        let char = str.charAt(i);
+        if ((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char >= '0' && char <= '9') {
+            if (result == "") {
+                if (firstup) {
+                    result += ("" + char).toUpperCase();
+                } else {
+                    result += ("" + char).toLowerCase();
+                }
+            }
+            else if (upnext) {
+                result += ("" + char).toUpperCase();
+            } else {
+                result += char;
+            }
+            upnext = false;
+        } else {
+            upnext = true;
+        }
+    }
+    return result;
 };

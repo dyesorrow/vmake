@@ -32,7 +32,7 @@ vmake.task.test = async function () {
     // target.add_objs("res/icon/icon.o");  // 添加.o文件
     // target.set_multi_process(2);         // 设置构建是使用的进程数
 
-    target.set_outdir("dest");
+    target.set_outdir("bin");
     await target.build();
 };
 
