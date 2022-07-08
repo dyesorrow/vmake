@@ -32,37 +32,43 @@ function find_vamkejs(dir, todo) {
 function run() {
     try {
         if (vmake.args.length != 0 && vmake.task[vmake.args[0]]) {
-            vmake.task[vmake.args[0]]();
+            vmake.task[vmake.args[0]](); // 优先尝试执行内置任务. 内置任务不需要查找 vmake.js 文件
             return;
         }
 
+        // 加载用户自定义任务
         find_vamkejs(process.cwd(), (vmakejs) => {
             require(vmakejs);
             process.chdir(path.dirname(vmakejs)); // 更改主工作目录
         });
 
-        if (vmake.args.length == 0 || !vmake.task[vmake.args[0]]) {
-            const inner_tasks = {
-                "help": true,
-                "publish": true,
-                "init": true,
-                "update": true,
-                "example": true,
-            };
-            let find = false;
-            for (const key in vmake.task) {
-                if (!inner_tasks[key]) {
-                    vmake.task[key]();
-                    find = true;
-                    break;
-                }
+        const inner_tasks = {
+            "help": true,
+            "publish": true,
+            "init": true,
+            "update": true,
+            "example": true,
+        };
+        let user_tasks = [];
+        for (const key in vmake.task) {
+            if (!inner_tasks[key]) {
+                user_tasks.push(key);
             }
-            if (!find) {
+        };
+
+        if (vmake.args.length != 0) {
+            if (vmake.task[vmake.args[0]]) {
+                vmake.task[vmake.args[0]]();
+            } else {
+                vmake.error("没有找到任务, 任务列表如下: \n  " + Object.keys(inner_tasks).join("\n  ") + "\n\n  " + user_tasks.join("\n  "));
+            }
+            return;
+        } else {
+            if (user_tasks.length == 0) {
                 vmake.task.help();
+            } else {
+                vmake.task[user_tasks[0]](); // 默认使用第一个用户任务
             }
-        }
-        else {
-            vmake.task[vmake.args[0]]();
         }
     } catch (error) {
         if (error instanceof RangeError) {
