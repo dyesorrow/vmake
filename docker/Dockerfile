@@ -9,3 +9,4 @@ RUN mkdir -p /vmake && cd /vmake && wget https://github.com/dyesorrow/vmake/arch
 RUN cd /vmake && unzip master.zip && cd vmake-master && npm install && npm install -g .
 WORKDIR /data
 CMD vmake
+

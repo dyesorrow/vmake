@@ -10,11 +10,10 @@ vmake.task.test = async function () {
     target.add_cxxflag("-g");               // 添加g++编译参数
     target.add_cxxflag("-std=c++17");
     target.add_cxxflag("-Wall");
-    target.add_cxxflag("-Wno-write-strings -Wno-unused-parameter -Wno-sign-compare -Wno-format-security");
     target.add_cxxflag("-finput-charset=UTF-8");
 
     target.add_package("${vmake.get_config("repo", "http://localhost:19901/vmake-repo")}", {
-        "log": "1.1.0",                     // 添加版本为 1.1.0 的 log 库
+        "hutool-log": "1.1.0",                     // 添加版本为 1.1.0 的 hutool-log 库
     });
 
     if (os.platform() == "win32") {
@@ -42,7 +41,6 @@ vmake.task.release = async function () {
     target.add_cxxflag("-g");
     target.add_cxxflag("-std=c++17");
     target.add_cxxflag("-Wall");
-    target.add_cxxflag("-Wno-write-strings -Wno-unused-parameter -Wno-sign-compare -Wno-format-security");
     target.add_cxxflag("-finput-charset=UTF-8");
 
     target.add_package("${vmake.get_config("repo", "http://localhost:19901/vmake-repo")}", {

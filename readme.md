@@ -9,6 +9,13 @@ npm install -f -g git+https://github.com/dyesorrow/vmake
 npm install -g .
 ```
 
+##### 安装docker容器版本
+基于ubuntu:20.04
+```sh
+curl -sL https://github.com/dyesorrow/vmake/raw/master/docker/install.sh | sudo bash -
+```
+
+
 ## 使用
 
 1. 初始化项目
@@ -35,13 +42,10 @@ vmake.task.build = async function () {
     target.add_cxxflag("-g");
     target.add_cxxflag("-std=c++17");
     target.add_cxxflag("-Wall");
-    target.add_cxxflag("-Wno-write-strings -Wno-unused-parameter -Wno-sign-compare -Wno-format-security");
     target.add_cxxflag("-finput-charset=UTF-8");
-    target.add_cxxflag("-Wextra");
 
     target.add_package("http://localhost:19901/vmake-repo", {
-        "log": "1.0.0",
-        "json": "1.0.0",
+        "hutool-log": "1.1.0",
     });
 
     target.add_define("__DEBUG__");
@@ -49,8 +53,12 @@ vmake.task.build = async function () {
     target.add_files("src/*.cpp");
     // target.add_objs("res/icon/icon.o");
 
-    target.add_ldflag("-static");
-    target.add_link("pthread");
+    target.add_static_link("pthread");      // 添加静态链接库
+
+    // target.add_ldflag("-static");        // 添加链接参数 
+    // target.add_dynamic_link("pthread");  // 添加动态链接库
+    // target.add_objs("res/icon/icon.o");  // 添加.o文件
+    // target.set_multi_process(2);         // 设置构建是使用的进程数
 
     target.set_outdir("./");
 
@@ -63,6 +71,8 @@ vmake.task.build = async function () {
 2. 只会把依赖的lib自动添加到链接，其他的如pthread需要手动添加
 3. 目前支持 cpp 文件构建。如果是 .c 文件请单独构建，然后打成依赖包；或者构建成 obj 文件通过 add_objs 函数添加进来
 4. 默认构建使用一半的核心数量的进程。如果需要自己指定进程数，添加-j参数即可： `vmake -j4` 或者  `vmake -j 4`
+
+
 
 
 ## 依赖包构建

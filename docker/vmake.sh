@@ -2,7 +2,7 @@
 
 cwd=`pwd`
 # 构建镜像
-if [ "$(sudo docker images -q ubuntu)" == "" ]; then 
+if [ "$(sudo docker images -q vmake)" == "" ]; then 
     sudo mkdir -p /tmp/vmake-docker
     cd /tmp/vmake-docker
     wget https://github.com/dyesorrow/vmake/raw/master/docker/Dockerfile
@@ -14,3 +14,4 @@ if [ "$(sudo docker ps -a -q -f name=vmake)" != "" ]; then
 fi
 cd $cwd
 sudo docker run --rm -it -v $(pwd):/data vmake vmake $*
+
