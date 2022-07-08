@@ -10,11 +10,14 @@ npm install -g .
 ```
 
 ##### 安装docker容器版本
-基于ubuntu:20.04
+本地构建
 ```sh
 curl -sL https://github.com/dyesorrow/vmake/raw/master/docker/install.sh | sudo bash -
 ```
-
+或者从dockerhub中拉取最新
+```
+curl -sL https://github.com/dyesorrow/vmake/raw/master/docker/install-from-dockerhub.sh | sudo bash -
+```
 
 ## 使用
 
