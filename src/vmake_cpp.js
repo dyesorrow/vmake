@@ -620,8 +620,8 @@ vmake.cpp = function (target_name, target_type) {
         },
         build: async () => {
             let start_time = Date.now();
-            vmake.rm(target_dir);
-            vmake.mkdirs(target_dir);
+            vmake.rm(target.target_dir);
+            vmake.mkdirs(target.target_dir);
             
             vmake.log("编译使用进程数: %d", target_config.process_num);
             try {
