@@ -116,7 +116,7 @@ async function handle_dependencies(target) {
     for (let i = 0; i < target_config.packages.length; i++) {
         let pkg = target_config.packages[i];
         try {
-            vmake.info("[%3d%] %s", Math.floor(10 / target_config.packages.length * (i + 1)), `处理依赖: ${pkg.name}`);
+            vmake.info("[%3d%] %s", Math.floor(10 / target_config.packages.length * (i + 1)), `依赖: ${pkg.name}`);
             await handle_dependencies_pkg(target, pkg);
             pkg_info[pkg.name] = {
                 repo: pkg.repo,
