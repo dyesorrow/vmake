@@ -70,8 +70,13 @@ vmake.task.publish = async function () {
         }
         zip.writeZip(".publish/dest.zip");
         fs.writeFileSync(".publish/md5.txt", JSON.stringify(vmake.dir_md5sum("lib", "include", "bin", "src", "dependencies.json", "readme.md"), null, 4));
-
-        let pre = `${config.repo}/${config.name}/${os.platform()}-${config.version}`;
+        
+        let platform = os.platform();
+        if(os.platform() == "win32"){
+            platform = vmake.gccVersion().target.replaceAll(/[ -]/g, "_").toLocaleLowerCase();
+        }
+        
+        let pre = `${config.repo}/${config.name}/${platform}/${config.version}`;
         vmake.info("[50%] 上传到 >>> %s", pre);
 
         await vmake.upload("./.publish/dest.zip", `${pre}.zip`);

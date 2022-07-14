@@ -253,7 +253,7 @@ vmake.render = function (tmpl, data) {
             functionStr = functionStr.replaceAll(/([ ]*)<@( *\n)?([\S\s]*?)@>/g, function (m, p1, p2, p3) {
                 p3 = p3 || p2;
                 let lines = p3.split("\n");
-                if(p2 && lines.length > 1){
+                if (p2 && lines.length > 1) {
                     lines[0] = lines[0].substring(p1.length);
                 }
                 for (let i = 1; i < lines.length; i++) {
@@ -337,4 +337,20 @@ vmake.hump = function (str, firstup) {
         }
     }
     return result;
+};
+
+
+vmake.gccVersion = function () {
+    const exec = require("child_process").spawnSync;
+    let output = exec("g++", ["-v"]);
+
+    let reg = /gcc version (.+?) \((MinGW-.+?), built by (.+?)\)/g;
+    let rst = reg.exec(output.stderr);
+    if (rst) {
+        return {
+            version: rst[1],
+            target: rst[2],
+            author: rst[3]
+        };
+    }
 };

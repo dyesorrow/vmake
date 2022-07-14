@@ -3,10 +3,17 @@ const path = require('path');
 const os = require('os');
 const adm_zip = require("adm-zip");
 
+const gccVersion = vmake.gccVersion();
+
 async function handle_dependencies_pkg(target, pkg) {
     let build_dir = target.build_dir;
 
-    let remote_pre = pkg.repo + "/" + pkg.name + "/" + os.platform() + "-" + pkg.version;
+    let platform = os.platform();
+    if(os.platform() == "win32"){
+        platform = gccVersion.target.replaceAll(/[ -]/g, "_").toLocaleLowerCase();
+    }
+
+    let remote_pre = pkg.repo + "/" + pkg.name + "/" + platform + "/" + pkg.version;
     let local_zip = build_dir + "/lib/" + pkg.name + "-" + pkg.version + ".zip";
     let pkg_dir = build_dir + "/lib/" + pkg.name;
 
