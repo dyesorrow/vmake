@@ -10,7 +10,7 @@ async function handle_dependencies_pkg(target, pkg) {
 
     let platform = os.platform();
     if(os.platform() == "win32"){
-        platform = gccVersion.target.replaceAll(/[ -]/g, "_").toLocaleLowerCase();
+        platform = gccVersion.target.replaceAll(/[ -]/g, "_").toLowerCase();
     }
 
     let remote_pre = pkg.repo + "/" + pkg.name + "/" + platform + "/" + pkg.version;

@@ -5,8 +5,10 @@ vmake.task.init = function () {
   vmake.mkdirs("res");
   if (fs.readdirSync("src").length == 0) {
     fs.writeFileSync("src/main.cpp", `
-    
+#include <stdio.h>
+  
 int main(int argc, char const *argv[]) {
+  printf("hello world\n");
   return 0;
 }
   
@@ -14,17 +16,14 @@ int main(int argc, char const *argv[]) {
   }
 
   if (!fs.existsSync("vmake.js"))
-    fs.writeFileSync("vmake.js", `// more help: https://github.com/dyesorrow/vmake
-
+    fs.writeFileSync("vmake.js", `
 vmake.task.build = async function () {
     let target = vmake.cpp("app", "bin");
 
     target.add_cxxflag("-g");
     target.add_cxxflag("-std=c++17");
     target.add_cxxflag("-Wall");
-    target.add_cxxflag("-Wno-write-strings -Wno-unused-parameter -Wno-sign-compare -Wno-format-security");
     target.add_cxxflag("-finput-charset=UTF-8");
-    target.add_cxxflag("-Wextra");
 
     target.add_package("${vmake.get_config("repo", "http://localhost:19901/vmake-repo")}", {
         "hutool": "1.1.0",
@@ -36,8 +35,8 @@ vmake.task.build = async function () {
 
     target.add_dynamic_link("pthread");
 
+    // target.add_static_link("pthread");
     // target.add_ldflag("-static");
-    // target.add_dynamic_link("pthread");
     // target.add_objs("res/icon/icon.o");
     // target.set_multi_process(2);  // 2个进程构建
 

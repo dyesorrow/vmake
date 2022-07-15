@@ -73,11 +73,11 @@ vmake.task.publish = async function () {
         
         let platform = os.platform();
         if(os.platform() == "win32"){
-            platform = vmake.gccVersion().target.replaceAll(/[ -]/g, "_").toLocaleLowerCase();
+            platform = vmake.gccVersion().target.replaceAll(/[ -]/g, "_").toLowerCase();
         }
         
         let pre = `${config.repo}/${config.name}/${platform}/${config.version}`;
-        vmake.info("[50%] 上传到 >>> %s", pre);
+        vmake.info("[50%] 上传到 >>> %s", `${config.repo}/${config.name}/${platform}`);
 
         await vmake.upload("./.publish/dest.zip", `${pre}.zip`);
         await vmake.upload("./.publish/md5.txt", `${pre}.md5`);
